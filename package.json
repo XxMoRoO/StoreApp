@@ -1,0 +1,40 @@
+{
+  "name": "bags-pos",
+  "version": "1.0.0",
+  "description": "Inventory management system for Bags",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder"
+  },
+  "keywords": [],
+  "author": "Omar Abdelall",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^28.3.3",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.bags.pos",
+    "productName": "Bags POS",
+    "win": {
+      "target": "nsis",
+      "icon": "build/logo.ico"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "renderer.js",
+      "login.js",
+      "users.js",
+      "index.html",
+      "login.html",
+      "receipt.html",
+      "users.html",
+      "build/**/*"
+    ]
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.50.0"
+  }
+}

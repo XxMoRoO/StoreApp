@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bags - Login</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --primary-color: #1a202c;
+            --secondary-color: #2d3748;
+            --highlight-color: #38b2ac;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--primary-color);
+            color: #e2e8f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .form-container {
+            background-color: var(--secondary-color);
+            padding: 2rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            width: 320px;
+        }
+
+        .password-container {
+            position: relative;
+        }
+
+        .password-toggle-icon {
+            position: absolute;
+            top: 50%;
+            right: 0.75rem;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #a0aec0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="flex flex-col items-center">
+        <div class="flex justify-center mb-4">
+            <img src="build/logo.png" alt="Bags Logo" class="h-24 w-25">
+        </div>
+
+        <div id="login-view">
+            <form id="login-form" class="form-container">
+                <h1 class="text-2xl font-bold text-center mb-6">Bags Login</h1>
+                <div class="mb-4">
+                    <label class="block text-sm font-bold mb-2" for="login-username">Username</label>
+                    <input class="shadow appearance-none border rounded w-full py-2 px-3 bg-gray-700 text-white"
+                        id="login-username" type="text" placeholder="Username" required>
+                </div>
+                <div class="mb-6">
+                    <label class="block text-sm font-bold mb-2" for="login-password">Password</label>
+                    <div class="password-container">
+                        <input
+                            class="shadow appearance-none border rounded w-full py-2 px-3 bg-gray-700 text-white pr-10"
+                            id="login-password" type="password" placeholder="******************" required>
+                        <span class="password-toggle-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
+                                class="bi bi-eye" viewBox="0 0 16 16">
+                                <path
+                                    d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13.133 13.133 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.133 13.133 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.134 13.134 0 0 1 1.172 8z" />
+                                <path
+                                    d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z" />
+                            </svg>
+                        </span>
+                    </div>
+                    <p id="login-error-message" class="text-red-500 text-xs italic hidden mt-2">Username or password is
+                        incorrect.</p>
+                </div>
+                <div class="flex flex-col space-y-4">
+                    <button class="bg-highlight-color hover:bg-teal-600 text-primary-color font-bold py-2 px-4 rounded"
+                        type="submit">Sign In</button>
+                    <a href="#" id="show-signup"
+                        class="inline-block align-baseline font-bold text-sm text-teal-400 hover:text-teal-300 text-center">Create
+                        an Account</a>
+                    <a href="#" id="show-set-admin-password"
+                        class="inline-block align-baseline font-bold text-sm text-gray-400 hover:text-gray-300 text-center">Set
+                        Admin Password</a>
+                </div>
+            </form>
+        </div>
+
+        <div id="signup-view" class="hidden">
+            <form id="signup-form" class="form-container">
+                <h1 class="text-2xl font-bold text-center mb-6">Create Account</h1>
+                <div class="mb-4">
+                    <label class="block text-sm font-bold mb-2" for="signup-username">Username</label>
+                    <input class="shadow appearance-none border rounded w-full py-2 px-3 bg-gray-700 text-white"
+                        id="signup-username" type="text" placeholder="Username" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-bold mb-2" for="signup-password">Password</label>
+                    <div class="password-container">
+                        <input
+                            class="shadow appearance-none border rounded w-full py-2 px-3 bg-gray-700 text-white pr-10"
+                            id="signup-password" type="password" placeholder="******************" required>
+                        <span class="password-toggle-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
+                                class="bi bi-eye" viewBox="0 0 16 16">
+                                <path
+                                    d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13.133 13.133 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.133 13.133 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.134 13.134 0 0 1 1.172 8z" />
+                                <path
+                                    d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z" />
+                            </svg>
+                        </span>
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-bold mb-2" for="signup-admin-password">Admin Password</label>
+                    <div class="password-container">
+                        <input
+                            class="shadow appearance-none border rounded w-full py-2 px-3 bg-gray-700 text-white pr-10"
+                            id="signup-admin-password" type="password" placeholder="******************" required>
+                        <span class="password-toggle-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
+                                class="bi bi-eye" viewBox="0 0 16 16">
+                                <path
+                                    d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13.133 13.133 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.133 13.133 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.134 13.134 0 0 1 1.172 8z" />
+                                <path
+                                    d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z" />
+                            </svg>
+                        </span>
+                    </div>
+                </div>
+                <div class="mb-6">
+                    <p id="signup-error-message" class="text-red-500 text-xs italic hidden"></p>
+                </div>
+                <div class="flex flex-col space-y-4">
+                    <button class="bg-highlight-color hover:bg-teal-600 text-primary-color font-bold py-2 px-4 rounded"
+                        type="submit">Sign Up</button> <a href="#" id="show-login"
+                        class="inline-block align-baseline font-bold text-sm text-teal-400 hover:text-teal-300 text-center">Back
+                        to Login</a>
+                </div>
+            </form>
+        </div>
+
+        <div id="set-admin-password-view" class="hidden">
+            <form id="set-admin-password-form" class="form-container">
+                <h1 class="text-xl font-bold text-center mb-6">Set New Admin Password</h1>
+                <div class="mb-4">
+                    <label class="block text-sm font-bold mb-2" for="old-admin-password">Old Admin Password</label>
+                    <div class="password-container">
+                        <input
+                            class="shadow appearance-none border rounded w-full py-2 px-3 bg-gray-700 text-white pr-10"
+                            id="old-admin-password" type="password" placeholder="******************" required>
+                        <span class="password-toggle-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
+                                class="bi bi-eye" viewBox="0 0 16 16">
+                                <path
+                                    d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13.133 13.133 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.133 13.133 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.134 13.134 0 0 1 1.172 8z" />
+                                <path
+                                    d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z" />
+                            </svg>
+                        </span>
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-bold mb-2" for="new-admin-password">New Admin Password</label>
+                    <div class="password-container">
+                        <input
+                            class="shadow appearance-none border rounded w-full py-2 px-3 bg-gray-700 text-white pr-10"
+                            id="new-admin-password" type="password" placeholder="******************" required>
+                        <span class="password-toggle-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
+                                class="bi bi-eye" viewBox="0 0 16 16">
+                                <path
+                                    d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13.133 13.133 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.133 13.133 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.134 13.134 0 0 1 1.172 8z" />
+                                <path
+                                    d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z" />
+                            </svg>
+                        </span>
+                    </div>
+                </div>
+                <div class="mb-6">
+                    <label class="block text-sm font-bold mb-2" for="confirm-new-admin-password">Confirm New
+                        Password</label>
+                    <div class="password-container">
+                        <input
+                            class="shadow appearance-none border rounded w-full py-2 px-3 bg-gray-700 text-white pr-10"
+                            id="confirm-new-admin-password" type="password" placeholder="******************" required>
+                        <span class="password-toggle-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
+                                class="bi bi-eye" viewBox="0 0 16 16">
+                                <path
+                                    d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13.133 13.133 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.133 13.133 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.134 13.134 0 0 1 1.172 8z" />
+                                <path
+                                    d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z" />
+                            </svg>
+                        </span>
+                    </div>
+                    <p id="set-admin-password-error" class="text-red-500 text-xs italic hidden mt-2"></p>
+                </div>
+                <div class="flex flex-col space-y-4">
+                    <button class="bg-highlight-color hover:bg-teal-600 text-primary-color font-bold py-2 px-4 rounded"
+                        type="submit">Save Changes</button>
+                    <a href="#" id="back-to-login"
+                        class="inline-block align-baseline font-bold text-sm text-teal-400 hover:text-teal-300 text-center">Back
+                        to Login</a>
+                </div>
+            </form>
+        </div>
+
+        <footer class="text-center text-gray-500 text-xs mt-6">
+            <p>System by: Omar Abdelall</p>
+            <p>Email: moroplus15@gmail.com</p>
+            <p>Phone No: 01009715199</p>
+        </footer>
+    </div>
+    <script src="./login.js"></script>
+</body>
+
+</html>

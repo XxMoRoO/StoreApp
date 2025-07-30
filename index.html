@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bags</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&family=Inter:wght@400;700&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #1a202c;
+            --secondary-color: #2d3748;
+            --accent-color: #4a5568;
+            --text-color: #e2e8f0;
+            --highlight-color: #38b2ac;
+            --success-color: #2f855a;
+            --danger-color: #e53e3e;
+            --danger-hover-color: #c53030;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--primary-color);
+            color: var(--text-color);
+        }
+
+        ::-webkit-scrollbar {
+            display: none;
+        }
+
+        body {
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        body[dir="rtl"] {
+            font-family: 'Cairo', sans-serif;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .modal {
+            background-color: rgba(0, 0, 0, 0.6);
+        }
+
+        .modal-content {
+            background-color: var(--secondary-color);
+        }
+
+        .modal-content-scrollable {
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+
+        body:not(.admin-mode) .admin-only,
+        body:not(.admin-mode) .admin-only-block {
+            display: none;
+        }
+
+        body.admin-mode .admin-only {
+            display: flex;
+        }
+
+        body.admin-mode .admin-only-block {
+            display: block;
+        }
+
+        .btn-primary {
+            background-color: var(--highlight-color);
+            color: var(--primary-color);
+            transition: background-color 0.3s;
+        }
+
+        .btn-primary:hover {
+            background-color: #319795;
+        }
+
+        .btn-primary.added {
+            background-color: var(--success-color);
+            color: white;
+            animation: vibrate 0.3s linear;
+        }
+
+        .btn-secondary {
+            background-color: var(--accent-color);
+            color: white;
+            transition: background-color 0.3s;
+        }
+
+        .btn-secondary:hover {
+            background-color: #2d3748;
+        }
+
+        .btn-danger {
+            background-color: var(--danger-color);
+            color: white;
+            transition: background-color 0.3s;
+        }
+
+        .btn-danger:hover {
+            background-color: var(--danger-hover-color);
+        }
+
+        .nav-link {
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            transition: background-color 0.3s, color 0.3s, transform 0.2s ease-in-out;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 70px;
+            height: 60px;
+        }
+
+        .nav-link:hover:not(.active) {
+            background-color: var(--secondary-color);
+            transform: translateY(-2px);
+        }
+
+        .nav-link.active {
+            background-color: var(--highlight-color);
+            color: var(--primary-color);
+        }
+
+        #admin-mode-btn.active {
+            background-color: var(--success-color);
+            color: white;
+        }
+
+        #admin-mode-btn:hover:not(.active) {
+            background-color: var(--secondary-color);
+        }
+
+        .nav-link .icon {
+            width: 1.75rem;
+            height: 1.75rem;
+            margin-bottom: 2px;
+            transition: transform 0.3s ease-in-out;
+        }
+
+        .nav-link .nav-text-label {
+            font-size: 0.65rem;
+            line-height: 1;
+            white-space: nowrap;
+        }
+
+        .nav-selling-wrapper {
+            position: relative;
+        }
+
+        #cart-item-count {
+            position: absolute;
+            top: -5px;
+            right: -8px;
+            background-color: var(--danger-color);
+        }
+
+        .category-tab {
+            padding: 8px 16px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .category-tab.active {
+            color: var(--highlight-color);
+            border-bottom-color: var(--highlight-color);
+        }
+
+        .sale-card-selected {
+            background-color: #4a5568 !important;
+            border: 1px solid var(--highlight-color);
+        }
+
+        input[type="date"]::-webkit-calendar-picker-indicator,
+        input[type="month"]::-webkit-calendar-picker-indicator {
+            filter: invert(1);
+            cursor: pointer;
+        }
+
+        .icon-btn {
+            background-color: transparent;
+            padding: 0.5rem;
+            border-radius: 9999px;
+            cursor: pointer;
+            transition: transform 0.4s ease-in-out, background-color 0.3s;
+        }
+
+        .icon-btn:hover {
+            background-color: var(--accent-color);
+        }
+
+        .door-path {
+            transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            transform-origin: right;
+        }
+
+        #logout-btn:hover .door-path {
+            transform: perspective(300px) rotateY(-60deg);
+        }
+
+        #logout-btn.closing .door-path {
+            transform: perspective(300px) rotateY(0deg);
+        }
+
+        .box-lid {
+            transition: transform 0.3s ease-in-out;
+        }
+
+        #nav-inventory:hover .box-lid {
+            transform: translateY(-4px);
+        }
+
+        #nav-selling:hover .icon {
+            transform: rotate(-15deg);
+        }
+
+        .payment-method-btn {
+            background-color: var(--secondary-color);
+            border: 2px solid var(--accent-color);
+            transition: all 0.2s ease-in-out;
+        }
+
+        .payment-method-btn.selected,
+        .payment-method-btn:hover {
+            background-color: var(--accent-color);
+            border-color: var(--highlight-color);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+        }
+
+        .payment-method-btn.selected {
+            color: var(--highlight-color);
+        }
+
+        .receipt-tab {
+            position: relative;
+            padding: 0.5rem;
+            cursor: pointer;
+            background-color: var(--primary-color);
+            border: 1px solid var(--secondary-color);
+            border-bottom: none;
+            border-radius: 0.5rem 0.5rem 0 0;
+            margin-right: 2px;
+            transition: all 0.2s ease-in-out;
+            transform-origin: bottom left;
+        }
+
+        .receipt-tab.active {
+            background-color: var(--secondary-color);
+            color: var(--highlight-color);
+            border-color: var(--highlight-color);
+            transform: translateY(2px) scale(1);
+        }
+
+        .receipt-tab:not(.active) {
+            transform: scale(0.7);
+        }
+
+        .receipt-tab:not(.active):hover {
+            transform: scale(1);
+        }
+
+        .receipt-tab .tab-content {
+            display: flex;
+            align-items: center;
+        }
+
+        .receipt-tab:not(.active) .tab-full-text {
+            display: none;
+        }
+
+        .receipt-tab:not(.active):hover .tab-full-text {
+            display: inline;
+        }
+
+        .receipt-tab:not(.active):hover .tab-short-text {
+            display: none;
+        }
+
+        .receipt-tab .close-receipt-btn {
+            margin-left: 0.5rem;
+            padding: 0.1rem;
+            border-radius: 9999px;
+            display: none;
+        }
+
+        .receipt-tab.active .close-receipt-btn,
+        .receipt-tab:hover .close-receipt-btn {
+            display: inline-block;
+        }
+
+        .receipt-tab .close-receipt-btn:hover {
+            background-color: var(--danger-color);
+            color: white;
+        }
+
+        #add-receipt-btn {
+            background-color: transparent;
+            border: 2px dashed var(--accent-color);
+            color: var(--accent-color);
+            transition: all 0.2s ease-in-out;
+        }
+
+        #add-receipt-btn:hover {
+            background-color: var(--accent-color);
+            color: white;
+        }
+
+        .color-swatch-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .color-swatch {
+            width: 24px;
+            height: 24px;
+            border-radius: 9999px;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .color-swatch.active {
+            border-color: var(--highlight-color);
+            transform: scale(1.1);
+        }
+
+        .color-swatch:hover:not(.active) {
+            border-color: var(--text-color);
+        }
+
+        .product-card-image-wrapper {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 3 / 2;
+            margin-bottom: 1rem;
+        }
+
+        .product-card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.7s;
+            transform-style: preserve-3d;
+        }
+
+        .product-card:hover .product-card-inner {
+            transform: rotateY(180deg);
+        }
+
+        .product-card-front,
+        .product-card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+        }
+
+        .product-card-back {
+            transform: rotateY(180deg);
+        }
+
+        .product-card-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 0.375rem;
+        }
+
+        @keyframes shimmer {
+            0% {
+                filter: drop-shadow(0 0 1px rgba(226, 232, 240, 0));
+            }
+
+            50% {
+                filter: drop-shadow(0 0 8px rgba(226, 232, 240, 0.5));
+            }
+
+            100% {
+                filter: drop-shadow(0 0 1px rgba(226, 232, 240, 0));
+            }
+        }
+
+        #header-logo {
+            animation: shimmer 4s infinite;
+        }
+
+        @keyframes vibrate {
+            0% {
+                transform: translate(0);
+            }
+
+            20% {
+                transform: translate(-1px, 1px);
+            }
+
+            40% {
+                transform: translate(-1px, -1px);
+            }
+
+            60% {
+                transform: translate(1px, 1px);
+            }
+
+            80% {
+                transform: translate(1px, -1px);
+            }
+
+            100% {
+                transform: translate(0);
+            }
+        }
+    </style>
+</head>
+
+<body class="antialiased">
+
+    <header class="bg-gray-800 shadow-md p-4 flex justify-between items-center sticky top-0 z-40">
+        <div class="flex-1 flex justify-start">
+            <div id="home-btn" class="flex items-center space-x-3 cursor-pointer">
+                <img id="header-logo" src="build/logo.png" alt="Bags Logo" class="h-11 w-11">
+                <span class="text-2xl font-bold text-white">Bags</span>
+            </div>
+        </div>
+
+        <nav class="flex-shrink-0 flex items-center justify-center space-x-1 md:space-x-2">
+            <button id="nav-home" class="nav-link active" data-page="home-page" title="Home">
+                <svg class="icon" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
+                </svg>
+                <span class="nav-text-label" data-lang-key="navHome">Home</span>
+            </button>
+            <button id="nav-inventory" class="nav-link admin-only" data-page="inventory-page" title="Inventory">
+                <svg class="icon" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                    <g class="box-base">
+                        <path d="M3 8V21H21V8H3Z" />
+                    </g>
+                    <g class="box-lid">
+                        <path d="M2 5H22V8H2V5Z" />
+                        <path d="M10 5L10 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                        <path d="M14 5L14 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                    </g>
+                </svg>
+                <span class="nav-text-label" data-lang-key="navInventory">Inventory</span>
+            </button>
+            <button id="nav-selling" class="nav-link" data-page="selling-page" title="Selling">
+                <div class="nav-selling-wrapper">
+                    <svg class="icon" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z" />
+                    </svg>
+                    <span id="cart-item-count"
+                        class="bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">0</span>
+                </div>
+                <span class="nav-text-label" data-lang-key="navSelling">Selling</span>
+            </button>
+            <button id="nav-booking" class="nav-link" data-page="booking-page" title="Booking">
+                <svg class="icon" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                        d="M10 2a8 8 0 100 16 8 8 0 000-16zM5 7a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1zm1 3a1 1 0 000 2h6a1 1 0 100-2H6z">
+                    </path>
+                </svg>
+                <span class="nav-text-label" data-lang-key="navBooking">Booking</span>
+            </button>
+            <button id="nav-history" class="nav-link admin-only" data-page="history-page" title="History">
+                <svg class="icon" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                        d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7v2c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.25 2.52.75-1.23-3.5-2.07V8H12z" />
+                </svg>
+                <span class="nav-text-label" data-lang-key="navHistory">History</span>
+            </button>
+            <button id="nav-customers" class="nav-link admin-only" data-page="customers-page" title="Customers">
+                <svg class="icon" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                        d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" />
+                </svg>
+                <span class="nav-text-label" data-lang-key="navCustomers">Customers</span>
+            </button>
+            <button id="nav-about" class="nav-link" data-page="about-page" title="About">
+                <svg class="icon" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                        d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" />
+                </svg>
+                <span class="nav-text-label" data-lang-key="navAbout">About</span>
+            </button>
+            <button id="admin-mode-btn" class="nav-link">
+                <svg class="icon" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z" />
+                </svg>
+                <span class="nav-text-label" data-lang-key="navAdminMode">Admin</span>
+            </button>
+        </nav>
+
+        <div class="flex-1 flex justify-end items-center space-x-2">
+            <button id="lang-switcher" class="nav-link" title="Switch Language">
+                <svg class="icon" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                        d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zm6.93 6h-2.95a15.65 15.65 0 00-1.38-3.39A8.04 8.04 0 0118.92 8zM12 4.04c.83 1.2 1.48 2.53 1.91 3.96h-3.82c.43-1.43 1.08-2.76 1.91-3.96zM4.26 14C4.1 13.36 4 12.69 4 12s.1-1.36.26-2h3.38c-.08.66-.14 1.32-.14 2s.06 1.34.14 2H4.26zm.82 2h2.95c.32 1.25.78 2.45 1.38 3.39A7.99 7.99 0 015.08 16zm2.95-8H5.08a7.99 7.99 0 014.21-3.39c-.6 1.05-1.06 2.14-1.38 3.39zM12 19.96c-.83-1.2-1.48-2.53-1.91-3.96h3.82c-.43 1.43-1.08 2.76-1.91 3.96zM14.34 14H9.66c-.09-.66-.16-1.32-.16-2s.07-1.35.16-2h4.68c.09.65.16 1.32.16 2s-.07 1.34-.16 2zm.25 5.39c.6-1.05 1.06-2.14 1.38-3.39h2.95a8.04 8.04 0 01-4.33 3.39zM16.38 14c.08-.66.14-1.32.14-2s-.06-1.34-.14-2h3.38c.16.64.26 1.31.26 2s-.1 1.36-.26 2h-3.38z" />
+                </svg>
+                <span id="lang-switcher-text" class="nav-text-label"></span>
+            </button>
+            <button id="logout-btn" class="icon-btn" title="Logout">
+                <svg class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                        d="M14 8V6C14 4.89543 13.1046 4 12 4H8C6.89543 4 6 4.89543 6 6V18C6 19.1046 6.89543 20 8 20H12C13.1046 20 14 19.1046 14 18V16"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    <path class="door-path" d="M10 12H20M20 12L17 9M20 12L17 15" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <main id="app-container" class="p-4 md:p-8">
+        <div id="home-page" class="page">
+            <div id="home-category-tabs" class="flex flex-wrap border-b border-gray-700 mb-4"></div>
+            <div class="mb-4"><input type="text" id="product-search" data-lang-key="searchPlaceholder"
+                    placeholder="Search by name, code, or barcode..."
+                    class="w-full p-2 rounded-lg bg-gray-700 text-white"></div>
+            <div id="product-gallery" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4"></div>
+        </div>
+
+        <div id="inventory-page" class="page hidden">
+            <div id="inventory-category-tabs" class="flex flex-wrap border-b border-gray-700 mb-4"></div>
+            <div class="flex justify-between items-center mb-4">
+                <div class="flex space-x-2">
+                    <button id="add-product-btn" class="btn-primary py-2 px-4 rounded-lg"
+                        data-lang-key="addNewProduct">Add New Product</button>
+                    <button id="manage-categories-btn" class="btn-secondary py-2 px-4 rounded-lg admin-only"
+                        data-lang-key="manageCategories">Manage Categories</button>
+                    <button id="export-inventory-btn" class="btn-secondary py-2 px-4 rounded-lg admin-only"
+                        data-lang-key="exportInventory">Export Inventory Report</button>
+                </div>
+                <input type="text" id="inventory-search" data-lang-key="inventorySearchPlaceholder"
+                    placeholder="Search inventory..." class="p-2 w-1/3 rounded-lg bg-gray-700 text-white">
+            </div>
+            <div class="overflow-x-auto bg-gray-800 rounded-lg">
+                <table class="w-full text-left" id="inventory-table">
+                    <thead class="bg-gray-700">
+                        <tr>
+                            <th class="p-4" data-lang-key="colProductName">Name</th>
+                            <th class="p-4" data-lang-key="colProductCode">Code</th>
+                            <th class="p-4" data-lang-key="colCategory">Category</th>
+                            <th class="p-4" data-lang-key="colImage">Image</th>
+                            <th class="p-4" data-lang-key="colQuantity">Quantity</th>
+                            <th class="p-4" data-lang-key="colPurchasePrice">Purchase Price</th>
+                            <th class="p-4" data-lang-key="colSellingPrice">Selling Price</th>
+                            <th class="p-4" data-lang-key="colColors">Colors</th>
+                            <th class="p-4" data-lang-key="colActions">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="selling-page" class="page hidden">
+            <div id="receipt-tabs-container" class="flex items-end -mb-px">
+            </div>
+            <div id="active-receipt-content" class="bg-secondary-color p-6 rounded-b-lg rounded-r-lg shadow-lg">
+            </div>
+        </div>
+
+        <div id="booking-page" class="page hidden">
+            <div id="booking-tabs-container" class="flex items-end -mb-px">
+            </div>
+            <div id="active-booking-content" class="bg-secondary-color p-6 rounded-b-lg rounded-r-lg shadow-lg">
+            </div>
+        </div>
+
+        <div id="history-page" class="page hidden">
+            <div class="bg-gray-800 p-6 rounded-lg mb-6">
+                <h2 class="text-2xl font-bold mb-4" data-lang-key="reports">Reports</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+                    <div>
+                        <label for="time-filter-type" class="block text-sm mb-1" data-lang-key="timeFilter">Time
+                            Filter</label>
+                        <select id="time-filter-type" class="w-full p-2 rounded-lg bg-gray-700 text-white">
+                            <option value="all" data-lang-key="allTime">All Time</option>
+                            <option value="month" data-lang-key="byMonth">By Month</option>
+                            <option value="day" data-lang-key="byDay">By Day</option>
+                        </select>
+                    </div>
+                    <div id="month-filter-container" class="hidden"><label for="report-month-picker"
+                            class="block text-sm mb-1" data-lang-key="selectMonth">Select Month</label><input
+                            type="month" id="report-month-picker" class="w-full p-2 rounded-lg bg-gray-700 text-white">
+                    </div>
+                    <div id="day-filter-container" class="hidden"><label for="report-day-picker"
+                            class="block text-sm mb-1" data-lang-key="selectDay">Select Day</label><input type="date"
+                            id="report-day-picker" class="w-full p-2 rounded-lg bg-gray-700 text-white"></div>
+                    <div>
+                        <label for="user-filter" class="block text-sm mb-1" data-lang-key="cashier">Cashier</label>
+                        <select id="user-filter" class="w-full p-2 rounded-lg bg-gray-700 text-white">
+                            <option value="all" data-lang-key="allUsers">All Users</option>
+                        </select>
+                    </div>
+                    <div class="self-end"><button id="export-pdf-btn" class="btn-secondary w-full py-2 px-4 rounded-lg"
+                            data-lang-key="exportPdf">Export to PDF</button></div>
+                    <div class="self-end"><button id="calculate-shift-btn"
+                            class="btn-primary w-full py-2 px-4 rounded-lg" data-lang-key="calculateShift">Calculate
+                            Shift</button></div>
+                </div>
+                <div id="report-summary"
+                    class="mt-6 border-t border-gray-700 pt-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    <div class="bg-gray-700 p-4 rounded-lg">
+                        <h3 class="font-bold" data-lang-key="totalRevenue">Total Revenue</h3>
+                        <p id="total-revenue">0 EGP</p>
+                    </div>
+                    <div class="bg-gray-700 p-4 rounded-lg">
+                        <h3 class="font-bold" data-lang-key="totalProfit">Total Profit</h3>
+                        <p id="total-profit">0 EGP</p>
+                    </div>
+                    <div class="bg-gray-700 p-4 rounded-lg">
+                        <h3 class="font-bold" data-lang-key="totalCashSales">Total Cash Sales</h3>
+                        <p id="total-cash-sales">0 EGP</p>
+                    </div>
+                    <div class="bg-gray-700 p-4 rounded-lg">
+                        <h3 class="font-bold" data-lang-key="totalCardSales">Total Card Sales</h3>
+                        <p id="total-card-sales">0 EGP</p>
+                    </div>
+                    <div class="bg-gray-700 p-4 rounded-lg">
+                        <h3 class="font-bold" data-lang-key="totalItemsSold">Total Items Sold</h3>
+                        <p id="total-items-sold">0</p>
+                    </div>
+                    <div class="bg-gray-700 p-4 rounded-lg">
+                        <h3 class="font-bold" data-lang-key="totalReturns">Total Returns</h3>
+                        <p id="total-items-returned">0</p>
+                    </div>
+                    <div class="bg-gray-700 p-4 rounded-lg col-span-2 lg:col-span-1">
+                        <h3 class="font-bold" data-lang-key="totalReturnsValue">Total Returns Value</h3>
+                        <p id="total-returns-value">0 EGP</p>
+                    </div>
+                </div>
+                <div id="seller-report-summary" class="mt-6 border-t border-gray-700 pt-4">
+                    <h3 class="text-xl font-bold mb-2" data-lang-key="sellerSummaryTitle">Seller Summary</h3>
+                    <div id="seller-stats-container" class="space-y-2">
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-gray-800 p-6 rounded-lg mb-6">
+                <h2 class="text-2xl font-bold mb-4" data-lang-key="openBookings">Open Bookings</h2>
+                <div id="open-bookings-list" class="space-y-4">
+                </div>
+            </div>
+
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold" data-lang-key="salesHistory">Sales History</h2>
+                <input type="text" id="history-search" data-lang-key="searchReceiptsPlaceholder"
+                    placeholder="Search by Receipt ID or Cashier..." class="p-2 rounded-lg bg-gray-700 text-white">
+            </div>
+            <div id="selection-controls" class="flex items-center space-x-4 mb-4 hidden">
+                <input type="checkbox" id="select-all-checkbox" class="h-5 w-5 rounded"><label for="select-all-checkbox"
+                    data-lang-key="selectAll">Select All</label>
+                <button id="delete-selected-btn" class="btn-danger py-2 px-4 rounded-lg hidden"
+                    data-lang-key="deleteSelected">Delete Selected</button>
+            </div>
+            <div id="sales-history-list" class="space-y-4"></div>
+            <div class="mt-8 pt-6 border-t-2 border-gray-700 admin-only-block">
+                <h2 class="text-2xl font-bold mb-4" data-lang-key="userManagement">User Management</h2>
+                <button id="manage-users-btn" class="btn-primary py-2 px-4 rounded-lg"
+                    data-lang-key="openUserManagement">
+                    Open User Management
+                </button>
+            </div>
+        </div>
+
+        <div id="customers-page" class="page hidden">
+            <h2 class="text-3xl font-bold mb-4" data-lang-key="customersTitle">Customers</h2>
+            <div class="bg-gray-800 p-4 rounded-lg mb-6 flex justify-between items-center">
+                <input type="text" id="customer-search" class="p-2 w-1/3 rounded-lg bg-gray-700 text-white"
+                    placeholder="Search by name or phone...">
+                <div class="flex items-center space-x-2">
+                    <label for="customer-month-filter" class="text-sm" data-lang-key="filterByMonth">Filter by
+                        Month:</label>
+                    <input type="month" id="customer-month-filter" class="p-2 rounded-lg bg-gray-700 text-white">
+                    <button id="export-customers-btn" class="btn-secondary py-2 px-4 rounded-lg"
+                        data-lang-key="exportExcel">Export to Excel</button>
+                </div>
+            </div>
+            <div class="overflow-x-auto bg-gray-800 rounded-lg">
+                <table class="w-full text-left" id="customers-table">
+                    <thead class="bg-gray-700">
+                        <tr>
+                            <th class="p-4" data-lang-key="colCustomerName">Name</th>
+                            <th class="p-4" data-lang-key="colCustomerPhone">Phone</th>
+                            <th class="p-4" data-lang-key="colCustomerAddress">Address</th>
+                            <th class="p-4" data-lang-key="colCustomerCity">City</th>
+                            <th class="p-4" data-lang-key="colTotalItems">Total Items Bought</th>
+                            <th class="p-4" data-lang-key="colLastPurchase">Last Purchase</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="about-page" class="page hidden">
+            <div class="bg-gray-800 p-8 rounded-lg max-w-2xl mx-auto">
+                <h2 class="text-3xl font-bold mb-4 text-center text-highlight-color">About Bags System</h2>
+                <p class="mb-6 text-center text-gray-300">
+                    This is a custom inventory and point-of-sale (POS) system designed and developed for Bags.
+                </p>
+                <div class="border-t border-gray-700 pt-6">
+                    <h3 class="text-2xl font-bold mb-4 text-center">Developer Information</h3>
+                    <div class="text-center space-y-2">
+                        <p class="text-lg"><strong>System by:</strong> Omar Abdelall</p>
+                        <p class="text-lg"><strong>Phone No:</strong> 01009715199</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <div id="product-modal" class="modal fixed inset-0 z-50 flex items-center justify-center hidden">
+        <div class="modal-content modal-content-scrollable w-full max-w-2xl p-6 rounded-lg shadow-lg my-8">
+            <h2 id="modal-title" class="text-2xl font-bold mb-4">Add New Product</h2>
+            <form id="product-form">
+                <input type="hidden" id="product-id">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div><label for="product-name" class="block mb-1" data-lang-key="labelProductName">Product
+                            Name</label><input type="text" id="product-name" class="w-full p-2 rounded-lg bg-gray-700"
+                            required></div>
+                    <div>
+                        <label for="product-category" class="block mb-1" data-lang-key="labelCategory">Category</label>
+                        <input list="category-list" id="product-category" placeholder="Choose or type new..."
+                            class="w-full p-2 rounded-lg bg-gray-700">
+                        <datalist id="category-list"></datalist>
+                    </div>
+                    <div><label for="product-code" class="block mb-1" data-lang-key="labelProductCode">Product Code
+                            (SKU)</label><input type="text" id="product-code" class="w-full p-2 rounded-lg bg-gray-700">
+                    </div>
+                    <div><label for="main-barcode" class="block mb-1" data-lang-key="labelBarcode">Main Barcode</label>
+                        <input type="text" id="main-barcode" class="w-full p-2 rounded-lg bg-gray-700">
+                    </div>
+                    <div><label for="purchase-price" class="block mb-1" data-lang-key="labelPurchasePrice">Purchase
+                            Price</label><input type="number" id="purchase-price"
+                            class="w-full p-2 rounded-lg bg-gray-700" required min="0" step="0.01"></div>
+                    <div><label for="selling-price" class="block mb-1" data-lang-key="labelSellingPrice">Selling
+                            Price</label><input type="number" id="selling-price"
+                            class="w-full p-2 rounded-lg bg-gray-700" required min="0" step="0.01"></div>
+
+                    <div class="md:col-span-2 border-t border-gray-700 pt-4 mt-4">
+                        <div class="flex justify-between items-center mb-2">
+                            <h3 class="text-lg font-bold" data-lang-key="labelColors">Colors & Stock</h3>
+                            <button type="button" id="add-color-btn" class="btn-primary py-1 px-3 rounded-lg text-sm"
+                                data-lang-key="btnAddColor">+ Add Color</button>
+                        </div>
+                        <div id="color-container" class="space-y-4">
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <label for="product-images" class="block mb-2" data-lang-key="labelProductImages">Product
+                        Images</label>
+                    <input type="file" id="product-images" class="w-full text-white" accept="image/*" multiple>
+                    <div id="image-previews-container" class="mt-4 grid grid-cols-3 gap-4">
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-4 mt-6"><button type="button" id="cancel-btn"
+                        class="btn-secondary py-2 px-4 rounded-lg" data-lang-key="btnCancel">Cancel</button><button
+                        type="submit" class="btn-primary py-2 px-4 rounded-lg" data-lang-key="btnSave">Save
+                        Product</button></div>
+            </form>
+        </div>
+    </div>
+
+    <div id="barcode-modal" class="modal fixed inset-0 z-50 flex items-center justify-center hidden">
+        <div class="modal-content w-full max-w-md p-6 rounded-lg shadow-lg">
+            <h2 id="barcode-modal-title" class="text-2xl font-bold mb-4">Product Barcodes</h2>
+            <div id="barcode-list" class="space-y-4 max-h-96 overflow-y-auto">
+            </div>
+            <div class="flex justify-end mt-6">
+                <button type="button" id="close-barcode-modal-btn"
+                    class="btn-secondary py-2 px-4 rounded-lg">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="category-modal" class="modal fixed inset-0 z-50 flex items-center justify-center hidden">
+        <div class="modal-content w-full max-w-md p-6 rounded-lg shadow-lg">
+            <h2 class="text-2xl font-bold mb-4" data-lang-key="manageCategoriesTitle">Manage Categories</h2>
+
+            <div class="mb-4">
+                <label for="new-category-name" class="block mb-1" data-lang-key="newCategoryName">New Category
+                    Name</label>
+                <div class="flex space-x-2">
+                    <input type="text" id="new-category-name" class="w-full p-2 rounded-lg bg-gray-700"
+                        placeholder="e.g. Shoes, Accessories">
+                    <button id="add-category-btn" class="btn-primary py-2 px-4 rounded-lg"
+                        data-lang-key="addCategoryBtn">Add</button>
+                </div>
+                <p id="category-error" class="text-red-400 text-sm mt-1 hidden"></p>
+            </div>
+
+            <div class="border-t border-gray-600 pt-4">
+                <h3 class="font-semibold mb-2" data-lang-key="existingCategories">Existing Categories</h3>
+                <div id="category-list-container" class="space-y-2 max-h-64 overflow-y-auto">
+                </div>
+            </div>
+
+            <div class="flex justify-end mt-6">
+                <button type="button" id="close-category-modal-btn" class="btn-secondary py-2 px-4 rounded-lg"
+                    data-lang-key="doneBtn">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="receipt-selection-modal" class="modal fixed inset-0 z-50 flex items-center justify-center hidden">
+        <div class="modal-content w-full max-w-sm p-6 rounded-lg shadow-lg">
+            <h2 class="text-2xl font-bold mb-4">Select Receipt</h2>
+            <p class="mb-4">Choose which receipt to add the item to:</p>
+            <div id="receipt-selection-buttons" class="flex flex-col space-y-2">
+            </div>
+            <div class="flex justify-end mt-6">
+                <button type="button" id="cancel-receipt-selection-btn"
+                    class="btn-secondary py-2 px-4 rounded-lg">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+
+    <div id="return-modal" class="modal fixed inset-0 z-50 flex items-center justify-center hidden">
+        <div class="modal-content w-full max-w-md p-6 rounded-lg shadow-lg">
+            <h2 class="text-2xl font-bold mb-4">Process Return</h2>
+            <div id="return-items-container"></div>
+            <div class="flex justify-end space-x-4 mt-4"><button type="button" id="cancel-return-btn"
+                    class="btn-secondary py-2 px-4 rounded-lg">Cancel</button><button type="button"
+                    id="confirm-return-btn" class="btn-primary py-2 px-4 rounded-lg">Confirm Return</button></div>
+        </div>
+    </div>
+
+    <div id="admin-password-modal" class="modal fixed inset-0 z-50 flex items-center justify-center hidden">
+        <div class="modal-content w-full max-w-sm p-6 rounded-lg shadow-lg">
+            <h2 class="text-2xl font-bold mb-4">Admin Login</h2>
+            <form id="admin-password-form">
+                <label for="admin-password-input" class="block mb-2">Password</label>
+                <input type="password" id="admin-password-input"
+                    class="w-full p-2 rounded-lg bg-gray-700 text-white mb-2" required>
+                <p id="admin-password-error" class="text-red-400 text-sm mb-4 hidden">Incorrect password. Please try
+                    again.</p>
+                <div class="flex justify-end space-x-4 mt-4">
+                    <button type="button" id="cancel-admin-password-btn"
+                        class="btn-secondary py-2 px-4 rounded-lg">Cancel</button>
+                    <button type="submit" class="btn-primary py-2 px-4 rounded-lg">Login</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="renderer.js" type="module"></script>
+</body>
+
+</html>

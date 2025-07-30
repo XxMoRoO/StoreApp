@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Management</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-color: #1a202c;
+            color: #e2e8f0;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .btn-danger {
+            background-color: #e53e3e;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background-color: #c53030;
+        }
+
+        .btn-primary {
+            background-color: #38b2ac;
+            color: #1a202c;
+        }
+
+        .btn-primary:hover {
+            background-color: #319795;
+        }
+
+        .btn-secondary {
+            background-color: #4a5568;
+        }
+
+        .btn-secondary:hover {
+            background-color: #2d3748;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+
+<body class="p-8">
+    <h1 class="text-3xl font-bold mb-6 border-b border-gray-700 pb-2">User Management</h1>
+    <div id="user-list" class="space-y-3">
+    </div>
+
+    <div id="password-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center"
+        style="background-color: rgba(0,0,0,0.7);">
+        <div class="w-full max-w-sm p-6 rounded-lg shadow-lg" style="background-color: #2d3748;">
+            <h2 id="modal-title" class="text-xl font-bold mb-4">Confirmation</h2>
+            <p id="modal-message" class="mb-4 text-gray-300">Please enter the required password.</p>
+            <input type="password" id="modal-password-input"
+                class="w-full p-2 rounded-lg bg-gray-800 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-highlight-color"
+                placeholder="Password...">
+            <div id="modal-error" class="text-red-400 text-sm mt-2 hidden"></div>
+            <div class="flex justify-end space-x-4 mt-6">
+                <button id="modal-cancel-btn" class="btn-secondary py-2 px-4 rounded-lg">Cancel</button>
+                <button id="modal-confirm-btn" class="btn-primary py-2 px-4 rounded-lg">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // This function displays the list of users with their action buttons
+        async function renderUserList() {
+            const userListContainer = document.getElementById('user-list');
+            if (!userListContainer) return;
+
+            userListContainer.innerHTML = '<p class="text-gray-400">Loading users...</p>';
+
+            const data = await window.api.getUserData();
+            const allUsers = data.allUsers || [];
+            const currentUser = data.currentUser;
+
+            if (allUsers.length > 0) {
+                userListContainer.innerHTML = '';
+                allUsers.forEach(user => {
+                    const userItem = document.createElement('div');
+                    userItem.className = 'flex justify-between items-center p-3 bg-gray-800 rounded-lg shadow-md';
+
+                    let actionButtonsHtml = `<span class="text-xs text-gray-500 italic">Current Admin</span>`;
+
+                    if (currentUser && user.username !== currentUser.username) {
+                        actionButtonsHtml = `
+                            <div class="space-x-2">
+                                <button class="modify-user-btn bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-1 px-3 rounded transition-colors duration-200" data-username="${user.username}">Modify</button>
+                                <button class="delete-user-btn btn-danger text-xs font-bold py-1 px-3 rounded transition-colors duration-200" data-username="${user.username}">Delete</button>
+                            </div>
+                        `;
+                    }
+
+                    userItem.innerHTML = `<span class="font-medium">${user.username}</span>${actionButtonsHtml}`;
+                    userListContainer.appendChild(userItem);
+                });
+            } else {
+                userListContainer.innerHTML = '<p>No other users found.</p>';
+            }
+        }
+
+        // MODIFICATION: This function shows our custom modal and waits for user input
+        function askForPassword(title, message) {
+            return new Promise((resolve, reject) => {
+                const modal = document.getElementById('password-modal');
+                const titleEl = document.getElementById('modal-title');
+                const messageEl = document.getElementById('modal-message');
+                const inputEl = document.getElementById('modal-password-input');
+                const confirmBtn = document.getElementById('modal-confirm-btn');
+                const cancelBtn = document.getElementById('modal-cancel-btn');
+                const errorEl = document.getElementById('modal-error');
+
+                titleEl.textContent = title;
+                messageEl.textContent = message;
+                inputEl.value = '';
+                errorEl.classList.add('hidden');
+                modal.classList.remove('hidden');
+                inputEl.focus();
+
+                const onConfirm = () => {
+                    const password = inputEl.value;
+                    if (password) {
+                        cleanup();
+                        resolve(password);
+                    } else {
+                        errorEl.textContent = 'Password cannot be empty.';
+                        errorEl.classList.remove('hidden');
+                    }
+                };
+
+                const onCancel = () => {
+                    cleanup();
+                    reject(new Error('User cancelled action.'));
+                };
+
+                const onKeyup = (e) => {
+                    if (e.key === 'Enter') onConfirm();
+                    if (e.key === 'Escape') onCancel();
+                };
+
+                // Add event listeners
+                confirmBtn.addEventListener('click', onConfirm);
+                cancelBtn.addEventListener('click', onCancel);
+                inputEl.addEventListener('keyup', onKeyup);
+
+                // Cleanup function to remove listeners and hide modal
+                function cleanup() {
+                    modal.classList.add('hidden');
+                    confirmBtn.removeEventListener('click', onConfirm);
+                    cancelBtn.removeEventListener('click', onCancel);
+                    inputEl.removeEventListener('keyup', onKeyup);
+                }
+            });
+        }
+
+        // MODIFICATION: Event listener now uses the custom modal instead of prompt()
+        document.getElementById('user-list').addEventListener('click', async (e) => {
+            const target = e.target;
+            try {
+                // Handle Modify Button Click
+                if (target.classList.contains('modify-user-btn')) {
+                    const usernameToModify = target.dataset.username;
+                    const newPassword = await askForPassword('Change Password', `Enter the NEW password for user "${usernameToModify}":`);
+                    const adminPassword = await askForPassword('Admin Confirmation', 'To confirm this change, please enter your admin password:');
+
+                    const result = await window.api.modifyUser({ usernameToModify, newPassword, adminPassword });
+
+                    if (result.success) {
+                        alert('User password updated successfully.');
+                    } else {
+                        alert(`Error: ${result.message}`);
+                    }
+                }
+
+                // Handle Delete Button Click
+                if (target.classList.contains('delete-user-btn')) {
+                    const usernameToDelete = target.dataset.username;
+                    if (confirm(`Are you sure you want to permanently delete user "${usernameToDelete}"?`)) {
+                        const adminPassword = await askForPassword('Admin Confirmation', `Enter your admin password to delete user "${usernameToDelete}":`);
+                        const result = await window.api.deleteUser({ usernameToDelete, adminPassword });
+
+                        if (result.success) {
+                            alert('User deleted successfully.');
+                            renderUserList(); // Refresh the list
+                        } else {
+                            alert(`Error: ${result.message}`);
+                        }
+                    }
+                }
+            } catch (error) {
+                console.log(error.message); // Log "User cancelled action."
+            }
+        });
+
+        // Initial load
+        renderUserList();
+    </script>
+</body>
+
+</html>

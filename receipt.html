@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Receipt</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            margin: 0;
+            background-color: #fff;
+        }
+
+        .receipt-frame {
+            width: 80mm;
+            margin: 20px auto;
+            padding: 15px;
+            border: 2px solid #000;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            border-bottom: 1px solid #ccc;
+            padding: 8px;
+            text-align: left;
+        }
+
+        h1 {
+            text-align: center;
+            margin-top: 0;
+            margin-bottom: 5px;
+            color: #1a202c;
+        }
+
+        h2 {
+            text-align: center;
+            margin-top: 15px;
+            margin-bottom: 5px;
+            font-size: 16px;
+            border-top: 1px dashed #ccc;
+            padding-top: 10px;
+        }
+
+        .info {
+            font-size: 12px;
+            color: #555;
+            margin-bottom: 10px;
+        }
+
+        .info p {
+            margin: 2px 0;
+        }
+
+        /* EDITED: Added styles for customer info */
+        .customer-info {
+            font-size: 12px;
+            color: #555;
+            margin-bottom: 20px;
+            border-top: 1px dashed #ccc;
+            padding-top: 10px;
+        }
+
+        .customer-info p {
+            margin: 2px 0;
+        }
+
+        .totals {
+            margin-top: 20px;
+            text-align: right;
+        }
+
+        .logo-container {
+            text-align: center;
+            margin-top: 25px;
+            padding-top: 15px;
+            border-top: 1px dashed #ccc;
+        }
+
+        .logo {
+            width: 50px;
+            height: auto;
+        }
+
+        .thank-you-msg {
+            margin-top: 10px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .footer {
+            text-align: center;
+            font-size: 10px;
+            margin-top: 15px;
+            border-top: 1px dashed #ccc;
+            padding-top: 10px;
+        }
+
+        .footer p {
+            margin: 2px 0;
+        }
+
+        @page {
+            size: 80mm auto;
+            margin: 0;
+        }
+
+        @media print {
+            body {
+                background-color: #fff;
+            }
+
+            .receipt-frame {
+                margin: 0;
+                padding: 5mm;
+                border: 2px solid #000;
+                box-shadow: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="receipt-frame">
+        <h1>Bags</h1>
+        <div class="info">
+            <p>Date: {{saleDate}}</p>
+            <p>Receipt ID: {{saleId}}</p>
+            <p>Cashier: {{username}}</p>
+        </div>
+
+        {{customerInfo}}
+
+        <h2>المبيعات / Sale</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>Qty</th>
+                    <th>Price</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{itemsHtml}}
+            </tbody>
+        </table>
+
+        {{returnsSection}}
+
+        <div class="totals">
+            <p><strong>Subtotal:</strong> {{subtotal}} EGP</p>
+            <p><strong>Discount:</strong> {{discountAmount}} EGP</p>
+            <p><strong>Total Returns:</strong> {{totalReturns}} EGP</p>
+            <hr style="border-top: 1px dashed #ccc; margin: 5px 0;">
+            <p><strong>Net Total:</strong> {{finalTotal}} EGP</p>
+            <p><strong>Paid:</strong> {{paidAmount}} EGP</p>
+            <p><strong>Change:</strong> {{changeAmount}} EGP</p>
+        </div>
+
+        <div class="logo-container">
+            <img src="{{logoSrc}}" alt="Bags Logo" class="logo">
+            <p class="thank-you-msg">Thanks for your purchase ❤️</p>
+        </div>
+
+        <div class="footer">
+            <p>System by: Omar Abdelall</p>
+            <p>Phone No: 01009715199</p>
+        </div>
+    </div>
+</body>
+
+</html>
