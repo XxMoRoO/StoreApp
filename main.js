@@ -2,10 +2,16 @@ const { app, BrowserWindow, ipcMain, Menu } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
+// تحديد مسار قاعدة البيانات والملف المؤقت لضمان الحفظ الآمن
 const dbPath = path.join(app.getPath('documents'), 'bags-database-online.json');
+const tempDbPath = path.join(app.getPath('documents'), 'bags-database-online.json.tmp');
+
 let mainWindow;
 let loggedInUser = null;
 
+// --- إدارة نوافذ التطبيق ---
+
+// إنشاء نافذة تسجيل الدخول عند بدء التشغيل
 function createLoginWindow() {
     const loginWindow = new BrowserWindow({
         width: 400,
@@ -18,15 +24,17 @@ function createLoginWindow() {
     return loginWindow;
 }
 
+// إنشاء النافذة الرئيسية بعد تسجيل الدخول بنجاح
 function createMainWindow(user) {
     mainWindow = new BrowserWindow({
         fullscreen: true,
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
-            webSecurity: false
+            webSecurity: false // ضروري أحيانًا لعرض الصور المحلية
         }
     });
 
+    // إنشاء قائمة بسيطة للتطبيق
     const menuTemplate = [
         {
             label: 'File',
@@ -43,6 +51,7 @@ function createMainWindow(user) {
 
     mainWindow.loadFile('index.html');
 
+    // إرسال بيانات المستخدم الحالي إلى النافذة الرئيسية عند تحميلها
     mainWindow.webContents.on('did-finish-load', () => {
         mainWindow.webContents.send('set-user', { username: user.username });
         mainWindow.focus();
@@ -50,10 +59,12 @@ function createMainWindow(user) {
 
     mainWindow.on('show', () => mainWindow.focus());
 
+    // التأكد من أن النافذة تظل مكبرة عند الخروج من وضع ملء الشاشة
     mainWindow.on('leave-full-screen', () => {
         mainWindow.maximize();
     });
 
+    // اختصارات لوحة المفاتيح (F11 لملء الشاشة, F5 للتحديث, Ctrl+Shift+I لأدوات المطور)
     mainWindow.webContents.on('before-input-event', (event, input) => {
         if (input.key.toLowerCase() === 'i' && input.control && input.shift) {
             mainWindow.webContents.toggleDevTools();
@@ -71,6 +82,7 @@ function createMainWindow(user) {
     });
 }
 
+// إنشاء نافذة إدارة المستخدمين عند الطلب
 function createUsersWindow() {
     const usersWindow = new BrowserWindow({
         width: 500,
@@ -78,41 +90,66 @@ function createUsersWindow() {
         title: 'User Management',
         webPreferences: { preload: path.join(__dirname, 'preload.js') },
     });
-    usersWindow.setMenu(null);
+    usersWindow.setMenu(null); // إزالة القائمة من هذه النافذة
     usersWindow.loadFile('users.html');
     usersWindow.on('show', () => usersWindow.focus());
 }
 
+// --- إدارة قاعدة البيانات (القراءة والكتابة) ---
+
+// دالة لقراءة قاعدة البيانات مع التعامل مع الأخطاء والملفات المؤقتة
 function getDatabase() {
+    // إذا كان هناك ملف مؤقت متبقٍ من عملية حفظ فاشلة، قم بمحاولة استعادته
+    if (fs.existsSync(tempDbPath)) {
+        try {
+            fs.renameSync(tempDbPath, dbPath);
+            console.log("Restored database from temp file.");
+        } catch (e) {
+            console.error("Could not restore temp database file.", e);
+        }
+    }
+
     if (fs.existsSync(dbPath)) {
         const fileData = fs.readFileSync(dbPath, 'utf-8');
         try {
             return JSON.parse(fileData);
         } catch (e) {
             console.error("Local DB is corrupt, creating a new one.", e);
+            // في حالة تلف الملف، يمكن إنشاء نسخة احتياطية منه قبل إنشاء ملف جديد
+            fs.renameSync(dbPath, `${dbPath}.corrupt.${Date.now()}`);
         }
     }
 
+    // إنشاء قاعدة بيانات أولية إذا لم تكن موجودة أو كانت تالفة
     const initialData = {
-        config: {
-            adminPassword: 'admin123',
-            lastShiftReportTime: null
-        },
+        config: { adminPassword: 'admin123', lastShiftReportTime: null },
         products: [],
         sales: [],
         users: [{ username: "omar", password: "omar123" }],
         categories: [],
         customers: [],
-        syncQueue: {
-            products: { upsert: [], delete: [] },
-            sales: { upsert: [], delete: [] },
-            customers: { upsert: [], delete: [] },
-            categories: { upsert: [], delete: [] },
-        }
+        bookings: [] // إضافة قسم الحجوزات
     };
     fs.writeFileSync(dbPath, JSON.stringify(initialData, null, 2), 'utf-8');
     return initialData;
 }
+
+// **الجزء المعدل**: دالة لحفظ البيانات بطريقة آمنة لمنع تلف الملفات
+function safeWrite(data) {
+    try {
+        const stringifiedData = JSON.stringify(data, null, 2);
+        // 1. الكتابة في ملف مؤقت أولاً
+        fs.writeFileSync(tempDbPath, stringifiedData, 'utf-8');
+        // 2. إذا نجحت الكتابة، قم بإعادة تسمية الملف المؤقت ليحل محل الملف الأصلي
+        fs.renameSync(tempDbPath, dbPath);
+        return { success: true };
+    } catch (error) {
+        console.error("Failed to safely write database:", error);
+        return { success: false, error: error.message };
+    }
+}
+
+// --- معالجات الأحداث (IPC Handlers) ---
 
 ipcMain.on('login', (event, credentials) => {
     const { username, password } = credentials;
@@ -145,18 +182,17 @@ ipcMain.handle('load-data', () => {
     } catch (error) { return { error: error.message }; }
 });
 
+// استخدام الدالة الآمنة للحفظ
 ipcMain.handle('save-data', (event, data) => {
-    try {
-        const db = getDatabase();
-        db.products = data.products ?? db.products;
-        db.sales = data.sales ?? db.sales;
-        db.categories = data.categories ?? db.categories;
-        db.customers = data.customers ?? db.customers;
-        db.syncQueue = data.syncQueue ?? db.syncQueue;
+    const db = getDatabase();
+    // تحديث البيانات المستلمة فقط لضمان عدم فقدان أي بيانات أخرى
+    db.products = data.products ?? db.products;
+    db.sales = data.sales ?? db.sales;
+    db.categories = data.categories ?? db.categories;
+    db.customers = data.customers ?? db.customers;
+    db.bookings = data.bookings ?? db.bookings; // حفظ الحجوزات
 
-        fs.writeFileSync(dbPath, JSON.stringify(db, null, 2), 'utf-8');
-        return { success: true };
-    } catch (error) { return { success: false, error: error.message }; }
+    return safeWrite(db);
 });
 
 ipcMain.handle('load-receipt-template', async () => {
@@ -174,6 +210,26 @@ ipcMain.handle('load-receipt-template', async () => {
     } catch (error) { return { error: error.message }; }
 });
 
+// **الجزء الجديد**: معالج لتحميل قالب طباعة الحجز
+ipcMain.handle('load-booking-template', async () => {
+    try {
+        const appPath = app.getAppPath();
+        // يمكن استخدام نفس قالب الفاتورة مع تعديلات في الواجهة الرسومية
+        const templatePath = path.join(appPath, 'receipt.html');
+        const logoPath = path.join(appPath, 'build', 'logo.png');
+        if (!fs.existsSync(templatePath)) throw new Error(`Template not found at ${templatePath}`);
+        if (!fs.existsSync(logoPath)) throw new Error(`Logo not found at ${logoPath}`);
+
+        const template = fs.readFileSync(templatePath, 'utf-8');
+        const logoBuffer = fs.readFileSync(logoPath);
+        const logoBase64 = `data:image/png;base64,${logoBuffer.toString('base64')}`;
+        return { template, logoBase64 };
+    } catch (error) {
+        return { error: error.message };
+    }
+});
+
+
 ipcMain.on('open-users-window', () => {
     createUsersWindow();
 });
@@ -190,8 +246,7 @@ ipcMain.handle('change-admin-password', (event, data) => {
         return { success: false, message: 'Incorrect old admin password.' };
     }
     db.config.adminPassword = newPassword;
-    fs.writeFileSync(dbPath, JSON.stringify(db, null, 2));
-    return { success: true };
+    return safeWrite(db);
 });
 
 ipcMain.handle('add-user', (event, credentials) => {
@@ -203,8 +258,7 @@ ipcMain.handle('add-user', (event, credentials) => {
         return { success: false, message: 'Username already exists.' };
     }
     db.users.push({ username: credentials.username, password: credentials.password });
-    fs.writeFileSync(dbPath, JSON.stringify(db, null, 2));
-    return { success: true };
+    return safeWrite(db);
 });
 
 ipcMain.handle('modify-user', (event, data) => {
@@ -216,8 +270,7 @@ ipcMain.handle('modify-user', (event, data) => {
     const userIndex = db.users.findIndex(u => u.username === usernameToModify);
     if (userIndex === -1) return { success: false, message: 'User not found.' };
     db.users[userIndex].password = newPassword;
-    fs.writeFileSync(dbPath, JSON.stringify(db, null, 2));
-    return { success: true };
+    return safeWrite(db);
 });
 
 ipcMain.handle('delete-user', (event, data) => {
@@ -233,8 +286,7 @@ ipcMain.handle('delete-user', (event, data) => {
 
     if (db.users.length === initialUserCount) return { success: false, message: 'User not found.' };
 
-    fs.writeFileSync(dbPath, JSON.stringify(db, null, 2));
-    return { success: true };
+    return safeWrite(db);
 });
 
 ipcMain.handle('get-last-shift-time', () => {
@@ -245,9 +297,10 @@ ipcMain.handle('get-last-shift-time', () => {
 ipcMain.handle('set-last-shift-time', (event, timestamp) => {
     const db = getDatabase();
     db.config.lastShiftReportTime = timestamp;
-    fs.writeFileSync(dbPath, JSON.stringify(db, null, 2));
-    return { success: true };
+    return safeWrite(db);
 });
+
+// --- دورة حياة التطبيق ---
 
 app.whenReady().then(createLoginWindow);
 
