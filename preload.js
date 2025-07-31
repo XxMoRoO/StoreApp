@@ -22,12 +22,14 @@ contextBridge.exposeInMainWorld('api', {
 
     // --- تحميل قوالب الطباعة ---
     loadReceiptTemplate: () => ipcRenderer.invoke('load-receipt-template'),
-    // **الجزء الجديد**: إضافة دالة لتحميل قالب طباعة الحجز
     loadBookingTemplate: () => ipcRenderer.invoke('load-booking-template'),
 
     // --- إدارة وقت تقرير الوردية ---
     getLastShiftTime: () => ipcRenderer.invoke('get-last-shift-time'),
     setLastShiftTime: (timestamp) => ipcRenderer.invoke('set-last-shift-time', timestamp),
+
+    // NEW: Export Returns to PDF handler
+    exportReturnsToPDF: (data) => ipcRenderer.invoke('export-returns-to-pdf', data),
 
     // --- مستمعو الأحداث (Event Listeners) ---
     // هذه الدوال تسمح للواجهة الرسومية بالاستماع للأحداث القادمة من العملية الرئيسية

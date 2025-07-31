@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bags - Login</title>
+    <title>Login - Unique Bags POS</title> <!-- Changed title here -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
@@ -27,7 +27,10 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            /* Increased height for better logo visibility */
+            min-height: 105vh;
+            /* Adjusted from 100vh to 105vh */
+            margin: 0;
         }
 
         body[dir="rtl"] {
@@ -39,8 +42,11 @@
             padding: 2.5rem;
             border-radius: 1rem;
             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-            width: 360px;
-            border: 1px solid var(--secondary-bg);
+            width: 100%;
+            max-width: 400px;
+            padding: 2.5rem;
+            /* 40px */
+            box-sizing: border-box;
         }
 
         input {
@@ -78,18 +84,25 @@
             cursor: pointer;
             color: #A09393;
         }
+
+        .logo {
+            max-width: 120px;
+            margin: 0 auto 2rem;
+            /* 32px */
+            display: block;
+        }
     </style>
 </head>
 
 <body>
     <div class="flex flex-col items-center">
         <div class="flex justify-center mb-6">
-            <img src="build/logo.png" alt="Bags Logo" class="h-28 w-28">
+            <img src="build/logo.png" alt="Unique Bags Logo" class="h-28 w-28"> <!-- Changed name here -->
         </div>
 
         <div id="login-view">
             <form id="login-form" class="form-container">
-                <h1 class="text-2xl font-bold text-center mb-6">Bags Login</h1>
+                <h1 class="text-2xl font-bold text-center mb-6">Unique Bags Login</h1> <!-- Changed name here -->
                 <div class="mb-4">
                     <label class="block text-sm font-bold mb-2" for="login-username">Username</label>
                     <input class="shadow-inner appearance-none border rounded-lg w-full py-2 px-3" id="login-username"
@@ -163,7 +176,6 @@
                             </svg>
                         </span>
                     </div>
-                    <p id="signup-error-message" class="text-red-500 text-xs italic hidden mt-2"></p>
                 </div>
                 <div class="flex flex-col space-y-4">
                     <button class="btn-primary font-bold py-2 px-4 rounded-lg" type="submit">Create</button>

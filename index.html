@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bags</title>
+    <title>Unique Bags</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
@@ -18,21 +18,13 @@
     <style>
         :root {
             --primary-bg: #FFFBF7;
-            /* خلفية كريمية ناعمة */
             --secondary-bg: #F5EBEB;
-            /* بيج وردي فاتح للخلفيات الثانوية */
             --primary-text: #4B4242;
-            /* لون نص داكن ومريح للعين */
             --header-bg: #FFFFFF;
-            /* رأس الصفحة أبيض نقي */
             --accent-color: #B0888E;
-            /* وردي مغبر للأزرار والعناصر المميزة */
             --highlight-color: #D4A3A9;
-            /* وردي أفتح للتأثيرات عند التمرير */
             --success-color: #5A8B72;
-            /* أخضر هادئ للنجاح */
             --danger-color: #C97C7C;
-            /* أحمر ناعم للخطر */
             --danger-hover-color: #b96b6b;
         }
 
@@ -108,7 +100,6 @@
 
         .btn-secondary {
             background-color: #D3C5C5;
-            /* رمادي فاتح مائل للوردي */
             color: var(--primary-text);
             transition: background-color 0.3s;
             font-weight: 600;
@@ -140,7 +131,6 @@
             width: 70px;
             height: 60px;
             color: #8A7F7F;
-            /* لون الأيقونات غير النشطة */
         }
 
         .nav-link:hover:not(.active) {
@@ -159,10 +149,12 @@
             color: white;
         }
 
-        .nav-link .icon {
-            width: 1.75rem;
-            height: 1.75rem;
+        /* حاوية الأيقونة للسماح بالأنيميشن */
+        .icon-wrapper {
+            width: 1.7rem;
+            height: 1.7rem;
             margin-bottom: 2px;
+            position: relative;
         }
 
         .nav-link .nav-text-label {
@@ -411,89 +403,149 @@
     <header class="p-4 flex justify-between items-center sticky top-0 z-40">
         <div class="flex-1 flex justify-start">
             <div id="home-btn" class="flex items-center space-x-3 cursor-pointer">
-                <img id="header-logo" src="build/logo.png" alt="Bags Logo" class="h-11 w-11">
-                <span class="text-2xl font-bold" style="color: var(--primary-text);">Bags</span>
+                <img id="header-logo" src="build/logo.png" alt="Unique Bags Logo" class="h-11 w-11">
+                <span class="text-2xl font-bold" style="color: var(--primary-text);">Unique Bags</span>
             </div>
         </div>
 
         <nav class="flex-shrink-0 flex items-center justify-center space-x-1 md:space-x-2">
-            <!-- Navigation buttons -->
             <button id="nav-home" class="nav-link active" data-page="home-page" title="Home">
-                <svg class="icon" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
-                </svg>
+                <div class="icon-wrapper">
+                    <svg class="icon" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
+                    </svg>
+                </div>
                 <span class="nav-text-label" data-lang-key="navHome">Home</span>
             </button>
+
+            <!-- ======================================================== -->
+            <!-- أيقونة المخزن الجديدة بشكل صندوق مع غطاء متحرك -->
+            <!-- ======================================================== -->
             <button id="nav-inventory" class="nav-link admin-only" data-page="inventory-page" title="Inventory">
-                <svg class="icon" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                    <path
-                        d="M21.99 8c0-.55-.45-1-1-1h-2.27c.12-.31.18-.65.18-1 0-1.66-1.34-3-3-3s-3 1.34-3 3c0 .35.06.69.18 1H6.81c.12-.31.18-.65.18-1 0-1.66-1.34-3-3-3S1 5.34 1 7c0 .35.06.69.18 1H-1c-.55 0-1 .45-1 1l-2 9c0 .55.45 1 1 1h20c.55 0 1-.45 1-1l-2-9zM16 5c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zM4 5c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm16 13H4V10h16v8z" />
-                </svg>
+                <div class="icon-wrapper">
+                    <!-- الحالة 1: الصندوق مغلق (يظهر افتراضياً) -->
+                    <svg class="icon-state icon-closed" fill="currentColor" viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="M2,8.5L12,13.5L22,8.5L12,3.5L2,8.5Z M12,14.5L2,9.5V15.5L12,20.5L22,15.5V9.5L12,14.5Z" />
+                    </svg>
+                    <!-- الحالة 2: الصندوق مفتوح (يظهر عند مرور الماوس) -->
+                    <svg class="icon-state icon-open" fill="currentColor" viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <!-- الغطاء المفتوح: تم رفعه وتدويره قليلاً -->
+                        <path d="M2,8.5L12,3.5L22,8.5L12,13.5L2,8.5Z" transform="translate(0, -2) rotate(-15 12 8.5)" />
+                        <!-- قاعدة الصندوق -->
+                        <path d="M12,14.5L2,9.5V15.5L12,20.5L22,15.5V9.5L12,14.5Z" />
+                    </svg>
+                </div>
                 <span class="nav-text-label" data-lang-key="navInventory">Inventory</span>
             </button>
+            <!-- ======================================================== -->
+            <!-- نهاية أيقونة المخزن الجديدة -->
+            <!-- ======================================================== -->
+
+
             <button id="nav-selling" class="nav-link" data-page="selling-page" title="Selling">
-                <div class="nav-selling-wrapper">
+                <div class="nav-selling-wrapper icon-wrapper">
                     <svg class="icon" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
                         <path
                             d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z" />
                     </svg>
-                    <span id="cart-item-count">0</span>
+                    <span id="cart-item-count" class="hidden">0</span>
                 </div>
                 <span class="nav-text-label" data-lang-key="navSelling">Selling</span>
             </button>
+
+            <!-- ======================================================== -->
+            <!-- أيقونة الحجز الجديدة (تم تحديثها لتتوافق مع الأنيميشن) -->
+            <!-- ======================================================== -->
             <button id="nav-booking" class="nav-link" data-page="booking-page" title="Booking">
-                <svg class="icon" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                    <path
-                        d="M10 2a8 8 0 100 16 8 8 0 000-16zM5 7a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1zm1 3a1 1 0 000 2h6a1 1 0 100-2H6z">
-                    </path>
-                </svg>
+                <div class="icon-wrapper">
+                    <!-- الحالة 1: أيقونة التقويم العادية -->
+                    <svg class="icon-state icon-closed" fill="currentColor" viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="M19,4H18V2H16V4H8V2H6V4H5A2,2 0 0,0 3,6V20A2,2 0 0,0 5,22H19A2,2 0 0,0 21,20V6A2,2 0 0,0 19,4M19,20H5V10H19V20M19,8H5V6H19V8Z" />
+                    </svg>
+                    <!-- الحالة 2: أيقونة التقويم مع علامة حجز (تظهر عند المرور) -->
+                    <svg class="icon-state icon-open" fill="currentColor" viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7v-5z" />
+                    </svg>
+                </div>
                 <span class="nav-text-label" data-lang-key="navBooking">Booking</span>
             </button>
+            <!-- ======================================================== -->
+            <!-- نهاية أيقونة الحجز الجديدة -->
+            <!-- ======================================================== -->
+
             <button id="nav-history" class="nav-link admin-only" data-page="history-page" title="History">
-                <svg class="icon" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                    <path
-                        d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7v2c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.25 2.52.75-1.23-3.5-2.07V8H12z" />
-                </svg>
+                <div class="icon-wrapper">
+                    <svg class="icon" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7v2c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.25 2.52.75-1.23-3.5-2.07V8H12z" />
+                    </svg>
+                </div>
                 <span class="nav-text-label" data-lang-key="navHistory">History</span>
             </button>
+            <button id="nav-salaries" class="nav-link admin-only" data-page="salaries-page" title="Salaries">
+                <div class="icon-wrapper">
+                    <svg class="icon" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z" />
+                    </svg>
+                </div>
+                <span class="nav-text-label" data-lang-key="navSalaries">Salaries</span>
+            </button>
             <button id="nav-customers" class="nav-link admin-only" data-page="customers-page" title="Customers">
-                <svg class="icon" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                    <path
-                        d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" />
-                </svg>
+                <div class="icon-wrapper">
+                    <svg class="icon" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" />
+                    </svg>
+                </div>
                 <span class="nav-text-label" data-lang-key="navCustomers">Customers</span>
             </button>
             <button id="nav-about" class="nav-link" data-page="about-page" title="About">
-                <svg class="icon" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path
-                        d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" />
-                </svg>
+                <div class="icon-wrapper">
+                    <svg class="icon" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" />
+                    </svg>
+                </div>
                 <span class="nav-text-label" data-lang-key="navAbout">About</span>
             </button>
             <button id="admin-mode-btn" class="nav-link">
-                <svg class="icon" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z" />
-                </svg>
+                <div class="icon-wrapper">
+                    <svg class="icon" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z" />
+                    </svg>
+                </div>
                 <span class="nav-text-label" data-lang-key="navAdminMode">Admin</span>
             </button>
         </nav>
 
         <div class="flex-1 flex justify-end items-center space-x-2">
             <button id="lang-switcher" class="nav-link" title="Switch Language">
-                <svg class="icon" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path
-                        d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zm6.93 6h-2.95a15.65 15.65 0 00-1.38-3.39A8.04 8.04 0 0118.92 8zM12 4.04c.83 1.2 1.48 2.53 1.91 3.96h-3.82c.43-1.43 1.08-2.76 1.91-3.96zM4.26 14C4.1 13.36 4 12.69 4 12s.1-1.36.26-2h3.38c-.08.66-.14 1.32-.14 2s.06 1.34.14 2H4.26zm.82 2h2.95c.32 1.25.78 2.45 1.38 3.39A7.99 7.99 0 015.08 16zm2.95-8H5.08a7.99 7.99 0 014.21-3.39c-.6 1.05-1.06 2.14-1.38 3.39zM12 19.96c-.83-1.2-1.48-2.53-1.91-3.96h3.82c-.43 1.43-1.08 2.76-1.91 3.96zM14.34 14H9.66c-.09-.66-.16-1.32-.16-2s.07-1.35.16-2h4.68c.09.65.16 1.32.16 2s-.07 1.34-.16 2zm.25 5.39c.6-1.05 1.06-2.14 1.38-3.39h2.95a8.04 8.04 0 01-4.33 3.39zM16.38 14c.08-.66.14-1.32.14-2s-.06-1.34-.14-2h3.38c.16.64.26 1.31.26 2s-.1 1.36-.26 2h-3.38z" />
-                </svg>
+                <div class="icon-wrapper">
+                    <svg class="icon" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zm6.93 6h-2.95a15.65 15.65 0 00-1.38-3.39A8.04 8.04 0 0118.92 8zM12 4.04c.83 1.2 1.48 2.53 1.91 3.96h-3.82c.43-1.43 1.08-2.76 1.91-3.96zM4.26 14C4.1 13.36 4 12.69 4 12s.1-1.36.26-2h3.38c-.08.66-.14 1.32-.14 2s.06 1.34.14 2H4.26zm.82 2h2.95c.32 1.25.78 2.45 1.38 3.39A7.99 7.99 0 015.08 16zm2.95-8H5.08a7.99 7.99 0 014.21-3.39c-.6 1.05-1.06 2.14-1.38 3.39zM12 19.96c-.83-1.2-1.48-2.53-1.91-3.96h3.82c-.43 1.43-1.08 2.76-1.91 3.96zM14.34 14H9.66c-.09-.66-.16-1.32-.16-2s.07-1.35.16-2h4.68c.09.65.16 1.32.16 2s-.07 1.34-.16 2zm.25 5.39c.6-1.05 1.06-2.14 1.38-3.39h2.95a8.04 8.04 0 01-4.33 3.39zM16.38 14c.08-.66.14-1.32.14-2s-.06-1.34-.14-2h3.38c.16.64.26 1.31.26 2s-.1 1.36-.26 2h-3.38z" />
+                    </svg>
+                </div>
                 <span id="lang-switcher-text" class="nav-text-label"></span>
             </button>
             <button id="logout-btn" class="nav-link" title="Logout">
-                <svg class="icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path
-                        d="M14 8V6C14 4.89543 13.1046 4 12 4H8C6.89543 4 6 4.89543 6 6V18C6 19.1046 6.89543 20 8 20H12C13.1046 20 14 19.1046 14 18V16"
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                    <path d="M10 12H20M20 12L17 9M20 12L17 15" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round" />
-                </svg>
+                <div class="icon-wrapper">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="M14 8V6C14 4.89543 13.1046 4 12 4H8C6.89543 4 6 4.89543 6 6V18C6 19.1046 6.89543 20 8 20H12C13.1046 20 14 19.1046 14 18V16"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                        <path d="M10 12H20M20 12L17 9M20 12L17 15" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                </div>
             </button>
         </div>
     </header>
@@ -556,24 +608,121 @@
 
         <!-- Booking Page -->
         <div id="booking-page" class="page hidden">
-            <div id="active-booking-content"></div>
+            <div class="flex justify-between items-center mb-4">
+                <h1 class="text-3xl font-bold" data-lang-key="openBookings">Open Bookings</h1>
+                <input type="text" id="booking-search-input" class="w-full max-w-md p-2 rounded-lg"
+                    data-lang-key="bookingSearchPlaceholder" placeholder="Search...">
+            </div>
+            <div id="open-bookings-list" class="space-y-4"></div>
         </div>
 
         <!-- History Page -->
         <div id="history-page" class="page hidden">
-            <h1 class="text-3xl font-bold mb-4" data-lang-key="reports">Reports</h1>
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div>
-                    <h2 class="text-2xl font-semibold mb-4" data-lang-key="salesHistory">Sales History</h2>
-                    <div class="bg-white p-4 rounded-lg shadow mb-4">
-                        <!-- Filters will go here -->
+            <div class="bg-white p-6 rounded-lg shadow mb-6">
+                <h2 class="text-2xl font-bold mb-4" data-lang-key="reports">Reports</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end" id="report-filters">
+                    <div>
+                        <label for="time-filter-type" class="block text-sm mb-1" data-lang-key="timeFilter">Time
+                            Filter</label>
+                        <select id="time-filter-type" class="w-full p-2 rounded-lg">
+                            <option value="all" data-lang-key="allTime">All Time</option>
+                            <option value="month" data-lang-key="byMonth">By Month</option>
+                            <option value="day" data-lang-key="byDay">By Day</option>
+                        </select>
                     </div>
-                    <div id="sales-history-list" class="space-y-4"></div>
+                    <div id="month-filter-container" class="hidden">
+                        <label for="report-month-picker" class="block text-sm mb-1" data-lang-key="selectMonth">Select
+                            Month</label>
+                        <input type="month" id="report-month-picker" class="w-full p-2 rounded-lg">
+                    </div>
+                    <div id="day-filter-container" class="hidden">
+                        <label for="report-day-picker" class="block text-sm mb-1" data-lang-key="selectDay">Select
+                            Day</label>
+                        <input type="date" id="report-day-picker" class="w-full p-2 rounded-lg">
+                    </div>
+                    <div>
+                        <label for="user-filter" class="block text-sm mb-1" data-lang-key="cashier">Cashier</label>
+                        <select id="user-filter" class="w-full p-2 rounded-lg">
+                            <option value="all" data-lang-key="allUsers">All Users</option>
+                        </select>
+                    </div>
+                    <div class="self-end">
+                        <button id="export-pdf-btn" class="btn-secondary w-full py-2 px-4 rounded-lg"
+                            data-lang-key="exportPdf">Export to PDF</button>
+                    </div>
+                    <div class="self-end">
+                        <button id="export-returns-pdf-btn" class="btn-primary w-full py-2 px-4 rounded-lg"
+                            data-lang-key="exportReturns">Export Returns to PDF</button>
+                    </div>
                 </div>
-                <div>
-                    <h2 class="text-2xl font-semibold mb-4" data-lang-key="openBookings">Open Bookings</h2>
-                    <div id="open-bookings-list" class="space-y-4"></div>
+                <div id="report-summary"
+                    class="mt-6 border-t pt-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    <div class="bg-gray-100 p-4 rounded-lg">
+                        <h3 class="font-bold" data-lang-key="totalRevenue">Total Revenue</h3>
+                        <p id="total-revenue">0 EGP</p>
+                    </div>
+                    <div class="bg-gray-100 p-4 rounded-lg">
+                        <h3 class="font-bold" data-lang-key="totalProfit">Total Profit</h3>
+                        <p id="total-profit">0 EGP</p>
+                    </div>
+                    <div class="bg-gray-100 p-4 rounded-lg">
+                        <h3 class="font-bold" data-lang-key="totalCashSales">Total Cash Sales</h3>
+                        <p id="total-cash-sales">0 EGP</p>
+                    </div>
+                    <div class="bg-gray-100 p-4 rounded-lg">
+                        <h3 class="font-bold" data-lang-key="totalItemsSold">Total Items Sold</h3>
+                        <p id="total-items-sold">0</p>
+                    </div>
+                    <div class="bg-gray-100 p-4 rounded-lg">
+                        <h3 class="font-bold" data-lang-key="totalReturns">Total Returns</h3>
+                        <p id="total-items-returned">0</p>
+                    </div>
+                    <div class="bg-gray-100 p-4 rounded-lg col-span-2 lg:col-span-1">
+                        <h3 class="font-bold" data-lang-key="totalReturnsValue">Total Returns Value</h3>
+                        <p id="total-returns-value">0 EGP</p>
+                    </div>
                 </div>
+            </div>
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold" data-lang-key="salesHistory">Sales History</h2>
+                <input type="text" id="history-search" data-lang-key="searchReceiptsPlaceholder" placeholder="Search..."
+                    class="p-2 rounded-lg">
+            </div>
+            <div id="selection-controls" class="flex items-center space-x-4 mb-4 hidden">
+                <input type="checkbox" id="select-all-checkbox" class="h-5 w-5 rounded"><label for="select-all-checkbox"
+                    data-lang-key="selectAll">Select All</label>
+                <button id="delete-selected-btn" class="btn-danger py-2 px-4 rounded-lg hidden"
+                    data-lang-key="deleteSelected">Delete Selected</button>
+            </div>
+            <div id="sales-history-list" class="space-y-4"></div>
+        </div>
+
+        <!-- Salaries Page -->
+        <div id="salaries-page" class="page hidden">
+            <div class="flex justify-between items-center mb-4">
+                <h1 class="text-3xl font-bold" data-lang-key="navSalaries">Salaries</h1>
+                <div class="flex items-center space-x-2">
+                    <input type="text" id="salaries-search-input" placeholder="Search for user..."
+                        class="p-2 rounded-lg">
+                    <button id="export-salaries-btn" class="btn-primary py-2 px-4 rounded-lg"
+                        data-lang-key="exportExcel">Export to Excel</button>
+                </div>
+            </div>
+            <div class="overflow-x-auto bg-white rounded-lg shadow">
+                <table id="salaries-table" class="w-full text-sm text-left">
+                    <thead class="text-xs uppercase" style="background-color: var(--secondary-bg);">
+                        <tr>
+                            <th class="p-4" data-lang-key="colUserName">User Name</th>
+                            <th class="p-4" data-lang-key="colFixedSalary">Fixed Salary</th>
+                            <th class="p-4" data-lang-key="colCommissionPerPiece">Commission / Piece</th>
+                            <th class="p-4" data-lang-key="colBonus">Bonus</th>
+                            <th class="p-4" data-lang-key="colPiecesSold">Pieces Sold</th>
+                            <th class="p-4" data-lang-key="colTotalCommission">Total Commission</th>
+                            <th class="p-4" data-lang-key="colTotalSalary">Total Salary</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
             </div>
         </div>
 
@@ -605,7 +754,7 @@
         <!-- About Page -->
         <div id="about-page" class="page hidden">
             <div class="text-center">
-                <h1 class="text-4xl font-bold mb-4">Bags POS System</h1>
+                <h1 class="text-4xl font-bold mb-4">Unique Bags POS System</h1>
                 <p class="text-lg">Version 1.0.0</p>
                 <p class="mt-8">Developed by:</p>
                 <p class="text-2xl font-semibold" style="color: var(--accent-color);">Omar Abdelall</p>
@@ -617,22 +766,14 @@
 
     <!-- Modals -->
     <div id="product-modal" class="modal fixed inset-0 z-50 flex items-center justify-center hidden">
-        <div class="modal-content modal-content-scrollable w-full max-w-2xl p-6 rounded-lg shadow-lg my-8">
-            <!-- Product form content will be injected by JS -->
-        </div>
+        <div class="modal-content modal-content-scrollable w-full max-w-2xl p-6 rounded-lg shadow-lg my-8"></div>
     </div>
-    <div id="barcode-modal" class="modal fixed inset-0 z-50 flex items-center justify-center hidden">
-        <!-- Barcode modal content will be injected by JS -->
-    </div>
+    <div id="barcode-modal" class="modal fixed inset-0 z-50 flex items-center justify-center hidden"></div>
     <div id="category-modal" class="modal fixed inset-0 z-50 flex items-center justify-center hidden">
-        <!-- Category modal content will be injected by JS -->
+        <div class="modal-content w-full max-w-md p-6 rounded-lg shadow-lg"></div>
     </div>
-    <div id="receipt-selection-modal" class="modal fixed inset-0 z-50 flex items-center justify-center hidden">
-        <!-- Receipt selection modal content will be injected by JS -->
-    </div>
-    <div id="return-modal" class="modal fixed inset-0 z-50 flex items-center justify-center hidden">
-        <!-- Return modal content will be injected by JS -->
-    </div>
+    <div id="receipt-selection-modal" class="modal fixed inset-0 z-50 flex items-center justify-center hidden"></div>
+    <div id="return-modal" class="modal fixed inset-0 z-50 flex items-center justify-center hidden"></div>
     <div id="admin-password-modal" class="modal fixed inset-0 z-50 flex items-center justify-center hidden">
         <div class="modal-content w-full max-w-sm p-6 rounded-lg shadow-lg">
             <h2 class="text-2xl font-bold mb-4">Admin Login</h2>
@@ -667,6 +808,7 @@
             </form>
         </div>
     </div>
+    <div id="booking-edit-modal" class="modal fixed inset-0 z-50 flex items-center justify-center hidden"></div>
 
     <script src="renderer.js" type="module"></script>
 </body>

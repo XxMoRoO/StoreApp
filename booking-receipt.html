@@ -2,7 +2,7 @@
 <html>
 
 <head>
-    <title>Receipt</title>
+    <title>Booking Invoice</title>
     <style>
         body {
             font-family: 'Courier New', monospace;
@@ -126,16 +126,21 @@
 
 <body>
     <div class="receipt-frame">
-        <h1>Unique Bags</h1> <!-- Changed name here -->
+        <h1>Unique Bags</h1>
         <div class="info">
-            <p>Date: {{saleDate}}</p>
-            <p>Receipt ID: {{saleId}}</p>
+            <p>Date: {{bookingDate}}</p>
+            <p>Booking ID: {{bookingId}}</p>
             <p>Cashier: {{username}}</p>
         </div>
 
-        {{customerInfo}}
+        <div class="customer-info">
+            <p><strong>Customer:</strong> {{customerName}}</p>
+            <p><strong>Phone:</strong> {{customerPhone}}</p>
+            <p><strong>Address:</strong> {{customerAddress}}</p>
+            <p><strong>City:</strong> {{customerCity}}</p> <!-- New line for city -->
+        </div>
 
-        <h2>المبيعات / Sale</h2>
+        <h2>الحجز / Booking</h2>
         <table>
             <thead>
                 <tr>
@@ -150,23 +155,16 @@
             </tbody>
         </table>
 
-        {{returnsSection}}
-
         <div class="totals">
             <p><strong>Subtotal:</strong> {{subtotal}} EGP</p>
-            <p><strong>Discount:</strong> {{discountAmount}} EGP</p>
-            <p><strong>Delivery Fee:</strong> {{deliveryFee}} EGP</p> <!-- New line for delivery fee -->
-            <p><strong>Total Returns:</strong> {{totalReturns}} EGP</p>
+            <p><strong>Deposit Paid:</strong> {{deposit}} EGP </p>
             <hr style="border-top: 1px dashed #ccc; margin: 5px 0;">
-            <!-- This div will be dynamically populated by JavaScript in renderer.js -->
-            <div id="final-total-section"></div>
-            <p><strong>Paid:</strong> {{paidAmount}} EGP</p>
-            <p><strong>Change:</strong> {{changeAmount}} EGP</p>
+            <p><strong>Amount Due:</strong> {{amountDue}} EGP</p>
         </div>
 
         <div class="logo-container">
-            <img src="{{logoSrc}}" alt="Unique Bags Logo" class="logo"> <!-- Changed name here -->
-            <p class="thank-you-msg">Thanks for your purchase ❤️</p>
+            <img src="{{logoSrc}}" alt="Unique Bags Logo" class="logo">
+            <p class="thank-you-msg">Thank you for your booking!</p>
         </div>
 
         <div class="footer">

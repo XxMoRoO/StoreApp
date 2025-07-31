@@ -47,6 +47,9 @@
 
 <body class="p-8">
     <h1 class="text-3xl font-bold mb-6 border-b border-gray-700 pb-2">User Management</h1>
+
+    <button id="add-new-user-btn" class="btn-primary py-2 px-4 rounded-lg mb-4">Add New User</button>
+
     <div id="user-list" class="space-y-3">
     </div>
 
@@ -66,8 +69,40 @@
         </div>
     </div>
 
+    <!-- New User Add Modal -->
+    <div id="add-user-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center"
+        style="background-color: rgba(0,0,0,0.7);">
+        <div class="w-full max-w-sm p-6 rounded-lg shadow-lg" style="background-color: #2d3748;">
+            <h2 class="text-xl font-bold mb-4">Add New User</h2>
+            <form id="add-user-form" class="space-y-4">
+                <div>
+                    <label for="new-username" class="block mb-1 text-gray-300">Username</label>
+                    <input type="text" id="new-username"
+                        class="w-full p-2 rounded-lg bg-gray-800 text-white border border-gray-600" required>
+                </div>
+                <div>
+                    <label for="new-user-password" class="block mb-1 text-gray-300">Password</label>
+                    <input type="password" id="new-user-password"
+                        class="w-full p-2 rounded-lg bg-gray-800 text-white border border-gray-600" required>
+                </div>
+                <div>
+                    <label for="add-user-admin-password" class="block mb-1 text-gray-300">Admin Password</label>
+                    <input type="password" id="add-user-admin-password"
+                        class="w-full p-2 rounded-lg bg-gray-800 text-white border border-gray-600" required>
+                </div>
+                <p id="add-user-error" class="text-red-400 text-sm hidden"></p>
+                <div class="flex justify-end space-x-4 mt-6">
+                    <button type="button" id="cancel-add-user-btn"
+                        class="btn-secondary py-2 px-4 rounded-lg">Cancel</button>
+                    <button type="submit" class="btn-primary py-2 px-4 rounded-lg">Add User</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script type="module">
-        // This function displays the list of users with their action buttons
+        // This script runs inside the users.html window
+
         async function renderUserList() {
             const userListContainer = document.getElementById('user-list');
             if (!userListContainer) return;
@@ -84,9 +119,13 @@
                     const userItem = document.createElement('div');
                     userItem.className = 'flex justify-between items-center p-3 bg-gray-800 rounded-lg shadow-md';
 
-                    let actionButtonsHtml = `<span class="text-xs text-gray-500 italic">Current Admin</span>`;
+                    let actionButtonsHtml = '';
 
-                    if (currentUser && user.username !== currentUser.username) {
+                    // Only show buttons for users who are NOT the currently logged-in admin
+                    // And only if the current user is an admin (handled by main process security)
+                    if (currentUser && user.username === currentUser.username) {
+                        actionButtonsHtml = `<span class="text-xs text-gray-500 italic">Current Admin</span>`;
+                    } else {
                         actionButtonsHtml = `
                             <div class="space-x-2">
                                 <button class="modify-user-btn bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-1 px-3 rounded transition-colors duration-200" data-username="${user.username}">Modify</button>
@@ -95,7 +134,10 @@
                         `;
                     }
 
-                    userItem.innerHTML = `<span class="font-medium">${user.username}</span>${actionButtonsHtml}`;
+                    userItem.innerHTML = `
+                        <span class="font-medium">${user.username}</span>
+                        ${actionButtonsHtml}
+                    `;
                     userListContainer.appendChild(userItem);
                 });
             } else {
@@ -179,8 +221,12 @@
                 // Handle Delete Button Click
                 if (target.classList.contains('delete-user-btn')) {
                     const usernameToDelete = target.dataset.username;
-                    if (confirm(`Are you sure you want to permanently delete user "${usernameToDelete}"?`)) {
-                        const adminPassword = await askForPassword('Admin Confirmation', `Enter your admin password to delete user "${usernameToDelete}":`);
+                    // Use custom modal for confirmation instead of browser's confirm()
+                    const confirmDelete = await askForPassword('Confirm Deletion', `Are you sure you want to permanently delete user "${usernameToDelete}"? Enter admin password to confirm.`);
+
+                    // If user enters password, it means they confirmed.
+                    if (confirmDelete) {
+                        const adminPassword = confirmDelete; // The password entered in the modal is the admin password
                         const result = await window.api.deleteUser({ usernameToDelete, adminPassword });
 
                         if (result.success) {
@@ -192,9 +238,53 @@
                     }
                 }
             } catch (error) {
-                console.log(error.message); // Log "User cancelled action."
+                console.log(error.message); // Log "User cancelled action." or other errors from askForPassword
             }
         });
+
+        // Event listener for the new "Add New User" button
+        document.getElementById('add-new-user-btn').addEventListener('click', () => {
+            document.getElementById('add-user-modal').classList.remove('hidden');
+            document.getElementById('new-username').value = '';
+            document.getElementById('new-user-password').value = '';
+            document.getElementById('add-user-admin-password').value = '';
+            document.getElementById('add-user-error').classList.add('hidden');
+            document.getElementById('new-username').focus();
+        });
+
+        // Event listener for the "Cancel" button in the Add User modal
+        document.getElementById('cancel-add-user-btn').addEventListener('click', () => {
+            document.getElementById('add-user-modal').classList.add('hidden');
+        });
+
+        // Event listener for the "Add User" form submission
+        document.getElementById('add-user-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('new-username').value;
+            const password = document.getElementById('new-user-password').value;
+            const adminPassword = document.getElementById('add-user-admin-password').value;
+            const errorEl = document.getElementById('add-user-error');
+
+            errorEl.classList.add('hidden');
+
+            if (!username || !adminPassword) { // Password is now optional
+                errorEl.textContent = 'Username and Admin Password are required.';
+                errorEl.classList.remove('hidden');
+                return;
+            }
+
+            const result = await window.api.addUser({ username, password, adminPassword, isNoLoginUser: password === '' }); // Pass flag if no password
+
+            if (result.success) {
+                alert('User added successfully!');
+                document.getElementById('add-user-modal').classList.add('hidden');
+                renderUserList(); // Refresh the list
+            } else {
+                errorEl.textContent = result.message;
+                errorEl.classList.remove('hidden');
+            }
+        });
+
 
         // Initial load
         renderUserList();

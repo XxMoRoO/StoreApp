@@ -99,7 +99,6 @@ function createUsersWindow() {
 
 // دالة لقراءة قاعدة البيانات مع التعامل مع الأخطاء والملفات المؤقتة
 function getDatabase() {
-    // إذا كان هناك ملف مؤقت متبقٍ من عملية حفظ فاشلة، قم بمحاولة استعادته
     if (fs.existsSync(tempDbPath)) {
         try {
             fs.renameSync(tempDbPath, dbPath);
@@ -112,10 +111,22 @@ function getDatabase() {
     if (fs.existsSync(dbPath)) {
         const fileData = fs.readFileSync(dbPath, 'utf-8');
         try {
-            return JSON.parse(fileData);
+            const db = JSON.parse(fileData);
+            // Ensure salaries structure includes bonus if it's an old database
+            if (!db.salaries) {
+                db.salaries = {};
+            }
+            // Initialize bonus for existing users if not present
+            db.users.forEach(user => {
+                if (!db.salaries[user.username]) {
+                    db.salaries[user.username] = { fixed: 0, commission: 0, bonus: 0 }; // Initialize bonus
+                } else if (db.salaries[user.username].bonus === undefined) {
+                    db.salaries[user.username].bonus = 0; // Add bonus if missing
+                }
+            });
+            return db;
         } catch (e) {
             console.error("Local DB is corrupt, creating a new one.", e);
-            // في حالة تلف الملف، يمكن إنشاء نسخة احتياطية منه قبل إنشاء ملف جديد
             fs.renameSync(dbPath, `${dbPath}.corrupt.${Date.now()}`);
         }
     }
@@ -128,19 +139,20 @@ function getDatabase() {
         users: [{ username: "omar", password: "omar123" }],
         categories: [],
         customers: [],
-        bookings: [] // إضافة قسم الحجوزات
+        bookings: [],
+        salaries: {
+            "omar": { fixed: 0, commission: 0, bonus: 0 } // Initialize bonus for default user
+        }
     };
     fs.writeFileSync(dbPath, JSON.stringify(initialData, null, 2), 'utf-8');
     return initialData;
 }
 
-// **الجزء المعدل**: دالة لحفظ البيانات بطريقة آمنة لمنع تلف الملفات
+// دالة لحفظ البيانات بطريقة آمنة لمنع تلف الملفات
 function safeWrite(data) {
     try {
         const stringifiedData = JSON.stringify(data, null, 2);
-        // 1. الكتابة في ملف مؤقت أولاً
         fs.writeFileSync(tempDbPath, stringifiedData, 'utf-8');
-        // 2. إذا نجحت الكتابة، قم بإعادة تسمية الملف المؤقت ليحل محل الملف الأصلي
         fs.renameSync(tempDbPath, dbPath);
         return { success: true };
     } catch (error) {
@@ -154,7 +166,8 @@ function safeWrite(data) {
 ipcMain.on('login', (event, credentials) => {
     const { username, password } = credentials;
     const db = getDatabase();
-    const user = db.users.find(u => u.username === username && u.password === password);
+    // Make username comparison case-insensitive
+    const user = db.users.find(u => u.username.toLowerCase() === username.toLowerCase() && u.password === password);
     if (user) {
         loggedInUser = user;
         createMainWindow(user);
@@ -182,7 +195,6 @@ ipcMain.handle('load-data', () => {
     } catch (error) { return { error: error.message }; }
 });
 
-// استخدام الدالة الآمنة للحفظ
 ipcMain.handle('save-data', (event, data) => {
     const db = getDatabase();
     // تحديث البيانات المستلمة فقط لضمان عدم فقدان أي بيانات أخرى
@@ -190,7 +202,8 @@ ipcMain.handle('save-data', (event, data) => {
     db.sales = data.sales ?? db.sales;
     db.categories = data.categories ?? db.categories;
     db.customers = data.customers ?? db.customers;
-    db.bookings = data.bookings ?? db.bookings; // حفظ الحجوزات
+    db.bookings = data.bookings ?? db.bookings;
+    db.salaries = data.salaries ?? db.salaries; // NEW: Save salaries
 
     return safeWrite(db);
 });
@@ -210,14 +223,13 @@ ipcMain.handle('load-receipt-template', async () => {
     } catch (error) { return { error: error.message }; }
 });
 
-// **الجزء الجديد**: معالج لتحميل قالب طباعة الحجز
+// NEW: Handler for loading the booking receipt template
 ipcMain.handle('load-booking-template', async () => {
     try {
         const appPath = app.getAppPath();
-        // يمكن استخدام نفس قالب الفاتورة مع تعديلات في الواجهة الرسومية
-        const templatePath = path.join(appPath, 'receipt.html');
+        const templatePath = path.join(appPath, 'booking-receipt.html'); // Use the new template
         const logoPath = path.join(appPath, 'build', 'logo.png');
-        if (!fs.existsSync(templatePath)) throw new Error(`Template not found at ${templatePath}`);
+        if (!fs.existsSync(templatePath)) throw new Error(`Booking template not found at ${templatePath}`);
         if (!fs.existsSync(logoPath)) throw new Error(`Logo not found at ${logoPath}`);
 
         const template = fs.readFileSync(templatePath, 'utf-8');
@@ -226,6 +238,22 @@ ipcMain.handle('load-booking-template', async () => {
         return { template, logoBase64 };
     } catch (error) {
         return { error: error.message };
+    }
+});
+
+// NEW: IPC handler for exporting returns to PDF
+ipcMain.handle('export-returns-to-pdf', async (event, returnsData) => {
+    try {
+        // This is a placeholder. In a real Electron app, you'd generate the PDF here
+        // using a library like 'pdfkit' or by rendering HTML to PDF.
+        // For now, we'll just return success.
+        console.log("Generating Returns PDF with data:", returnsData);
+        // Example: You might save to a temp file and then let renderer open it
+        // fs.writeFileSync(path.join(app.getPath('temp'), 'returns_report.pdf'), 'PDF Content', 'utf-8');
+        return { success: true, message: "Returns PDF generated successfully (placeholder)." };
+    } catch (error) {
+        console.error("Error generating returns PDF:", error);
+        return { success: false, error: error.message };
     }
 });
 
@@ -254,10 +282,17 @@ ipcMain.handle('add-user', (event, credentials) => {
     if (credentials.adminPassword !== db.config.adminPassword) {
         return { success: false, message: 'Incorrect Admin Password.' };
     }
-    if (db.users.some(u => u.username === credentials.username)) {
+    // Check for username existence case-insensitively
+    if (db.users.some(u => u.username.toLowerCase() === credentials.username.toLowerCase())) {
         return { success: false, message: 'Username already exists.' };
     }
-    db.users.push({ username: credentials.username, password: credentials.password });
+    // Allow adding user without a password if isNoLoginUser is true
+    const password = credentials.password || (credentials.isNoLoginUser ? '' : 'default_password_if_empty'); // Default password if not provided and not no-login user
+    db.users.push({ username: credentials.username, password: password });
+    // Initialize salary entry for the new user
+    if (!db.salaries[credentials.username]) {
+        db.salaries[credentials.username] = { fixed: 0, commission: 0, bonus: 0 };
+    }
     return safeWrite(db);
 });
 
@@ -283,6 +318,8 @@ ipcMain.handle('delete-user', (event, data) => {
 
     const initialUserCount = db.users.length;
     db.users = db.users.filter(u => u.username !== usernameToDelete);
+    // Also remove salary entry for the deleted user
+    delete db.salaries[usernameToDelete];
 
     if (db.users.length === initialUserCount) return { success: false, message: 'User not found.' };
 

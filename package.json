@@ -16,7 +16,7 @@
   },
   "build": {
     "appId": "com.bags.pos",
-    "productName": "Bags POS",
+    "productName": "Unique Bags POS",
     "win": {
       "target": "nsis",
       "icon": "build/logo.ico"
