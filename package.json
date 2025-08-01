@@ -34,5 +34,7 @@
       "build/**/*"
     ]
   },
-  "dependencies": {}
+  "dependencies": {
+    "firebase": "^12.0.0"
+  }
 }

@@ -10,9 +10,10 @@ contextBridge.exposeInMainWorld('api', {
     // --- عمليات المصادقة وإدارة المستخدمين ---
     login: (credentials) => ipcRenderer.send('login', credentials),
     logout: () => ipcRenderer.send('logout'),
-    addUser: (credentials) => ipcRenderer.invoke('add-user', credentials),
-    deleteUser: (data) => ipcRenderer.invoke('delete-user', data),
-    modifyUser: (data) => ipcRenderer.invoke('modify-user', data),
+    // --- تعديل: تم تحديث دوال الموظفين ---
+    addEmployee: (employeeData) => ipcRenderer.invoke('add-employee', employeeData),
+    deleteEmployee: (data) => ipcRenderer.invoke('delete-employee', data),
+    modifyEmployee: (data) => ipcRenderer.invoke('modify-employee', data),
     changeAdminPassword: (data) => ipcRenderer.invoke('change-admin-password', data),
     validateAdminPassword: (password) => ipcRenderer.invoke('validate-admin-password', password),
 

@@ -1,16 +1,19 @@
 // --- حالة التطبيق (State) ---
-// هذا الكائن يحتوي على جميع البيانات التي يحتاجها التطبيق ليعمل
 const state = {
     currentPage: 'home-page',
     products: [],
     receipts: [],
     bookings: [],
     salaries: {},
+    salariesPaidStatus: {},
     bookingSearchTerm: '',
     salariesSearchTerm: '',
+    selectedSalariesMonth: '',
     activeBookingId: null,
     activeReceiptId: null,
     editingBookingId: null,
+    editingCustomerId: null,
+    editingEmployeeUsername: null, // لتتبع الموظف الذي يتم تعديله
     sales: [],
     users: [],
     customers: [],
@@ -27,7 +30,6 @@ const state = {
 };
 
 // --- بيانات الترجمة ---
-// يحتوي على جميع النصوص للغتين العربية والإنجليزية
 const translations = {
     en: {
         navHome: 'Home', navInventory: 'Inventory', navSelling: 'Selling', navBooking: 'Booking', navHistory: 'History', navCustomers: 'Customers', navSalaries: 'Salaries', navAbout: 'About', btnLogout: 'Logout',
@@ -39,7 +41,7 @@ const translations = {
         labelProductName: 'Product Name', labelCategory: 'Category', labelProductCode: 'Product Code (SKU)', labelBarcode: 'Main Barcode', labelProductImages: 'Product Images',
         labelColors: 'Colors & Stock', btnAddColor: '+ Add Color', labelColorName: 'Color',
         labelSizesForColor: 'Sizes for', labelSize: 'Size', labelQuantity: 'Quantity', btnAddSize: '+ Add Size',
-        btnSave: 'Save Product', btnCancel: 'Cancel', btnOK: 'OK', btnEdit: 'Edit', btnDelete: 'Delete',
+        btnSave: 'Save', btnCancel: 'Cancel', btnOK: 'OK', btnEdit: 'Edit', btnDelete: 'Delete',
         addToCartTitle: 'Add Products to Cart', selectProduct: 'Select a product', color: 'Color', size: 'Size', sellingPrice: 'Selling Price (EGP)', addToCart: 'Add to Cart',
         addedToCart: 'Added!',
         barcodeScanner: 'Scan Barcode', barcodePlaceholder: 'Scan or type and press Enter...',
@@ -94,6 +96,18 @@ const translations = {
         returnDate: 'Return Date:',
         originalSaleTotal: 'Original Sale Total:',
         netSaleAfterReturn: 'Net Sale After Return:',
+        addEmployee: 'Add Employee',
+        editEmployee: 'Edit Employee',
+        employeeId: 'Employee ID',
+        employeeName: 'Employee Name',
+        employeePhone: 'Phone Number',
+        colEmployeeId: 'Employee ID',
+        deleteEmployeeConfirm: 'Are you sure you want to delete this employee?',
+        paid: 'Paid',
+        unpaid: 'Unpaid',
+        addCustomer: 'Add Customer',
+        editCustomer: 'Edit Customer',
+        deleteCustomerConfirm: 'Are you sure you want to delete this customer? This action cannot be undone.',
     },
     ar: {
         navHome: 'الرئيسية', navInventory: 'المخزن', navSelling: 'البيع', navBooking: 'الحجز', navHistory: 'السجلات', navCustomers: 'العملاء', navSalaries: 'الرواتب', navAbout: 'حول', btnLogout: 'تسجيل الخروج',
@@ -105,7 +119,7 @@ const translations = {
         labelProductName: 'اسم المنتج', labelCategory: 'الفئة', labelProductCode: 'كود المنتج (SKU)', labelBarcode: 'الباركود الرئيسي', labelProductImages: 'صور المنتج',
         labelColors: 'الألوان والمخزون', btnAddColor: '+ إضافة لون', labelColorName: 'اللون',
         labelSizesForColor: 'مقاسات لون', labelSize: 'مقاس', labelQuantity: 'كمية', btnAddSize: '+ إضافة مقاس',
-        btnSave: 'حفظ المنتج', btnCancel: 'إلغاء', btnOK: 'موافق', btnEdit: 'تعديل', btnDelete: 'حذف',
+        btnSave: 'حفظ', btnCancel: 'إلغاء', btnOK: 'موافق', btnEdit: 'تعديل', btnDelete: 'حذف',
         addToCartTitle: 'إضافة منتجات للسلة', selectProduct: 'اختر منتج', color: 'اللون', size: 'المقاس', sellingPrice: 'سعر البيع (جنيه)', addToCart: 'أضف إلى السلة',
         addedToCart: 'تمت الإضافة!',
         barcodeScanner: 'مسح الباركود', barcodePlaceholder: 'امسح أو اكتب واضغط Enter...',
@@ -160,6 +174,18 @@ const translations = {
         returnDate: 'تاريخ الإرجاع:',
         originalSaleTotal: 'إجمالي الطلب الأصلي:',
         netSaleAfterReturn: 'صافي البيع بعد الإرجاع:',
+        addEmployee: 'إضافة موظف',
+        editEmployee: 'تعديل موظف',
+        employeeId: 'الرقم الوظيفي',
+        employeeName: 'اسم الموظف',
+        employeePhone: 'رقم الهاتف',
+        colEmployeeId: 'الرقم الوظيفي',
+        deleteEmployeeConfirm: 'هل أنت متأكد من حذف هذا الموظف؟',
+        paid: 'مدفوع',
+        unpaid: 'غير مدفوع',
+        addCustomer: 'إضافة عميل',
+        editCustomer: 'تعديل عميل',
+        deleteCustomerConfirm: 'هل أنت متأكد من حذف هذا العميل؟ لا يمكن التراجع عن هذا الإجراء.',
     }
 };
 
@@ -172,9 +198,8 @@ function generateUUID() {
     });
 }
 
-// Function to generate a daily sequential ID for bookings and sales
 function getDailyId(prefix, collection) {
-    const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+    const today = new Date().toISOString().slice(0, 10);
     const itemsToday = collection.filter(item => item.createdAt && item.createdAt.startsWith(today));
     const nextId = itemsToday.length + 1;
     return `${prefix}${today.replace(/-/g, '')}-${nextId}`;
@@ -227,6 +252,7 @@ async function saveData() {
         customers: state.customers,
         bookings: state.bookings,
         salaries: state.salaries,
+        salariesPaidStatus: state.salariesPaidStatus,
     });
     if (!result.success) {
         console.error("Failed to save data:", result.error);
@@ -357,7 +383,7 @@ function render() {
     if (state.currentPage === 'salaries-page') renderSalariesPage();
 
     updateUIText();
-    updateCartIconCount(); // Ensure cart count is updated on every render
+    updateCartIconCount();
 }
 
 function renderCategoryTabs() {
@@ -503,13 +529,6 @@ function renderSellingPage() {
     renderActiveReceiptContent();
 }
 
-/**
- * =================================================================
- * تعديل: تغيير اسم تابات الفواتير
- * =================================================================
- * * تم تعديل هذه الدالة لتظهر اسم العميل في التاب بدلاً من "Receipt X".
- * * إذا لم يتم إدخال اسم العميل، سيظهر الاسم الافتراضي.
- */
 function renderReceiptTabs() {
     const tabsContainer = document.getElementById('receipt-tabs-container');
     if (!tabsContainer) return;
@@ -519,7 +538,6 @@ function renderReceiptTabs() {
         tab.className = `receipt-tab flex items-center ${receipt.id === state.activeReceiptId ? 'active' : ''}`;
         tab.dataset.receiptId = receipt.id;
 
-        // تحديد اسم التاب: اسم العميل أو رقم الفاتورة
         const tabLabel = receipt.customerName && receipt.customerName.trim() ? receipt.customerName.trim() : `Receipt ${index + 1}`;
         const shortLabel = receipt.customerName && receipt.customerName.trim() ? receipt.customerName.trim().charAt(0).toUpperCase() : index + 1;
 
@@ -542,13 +560,6 @@ function renderReceiptTabs() {
     tabsContainer.appendChild(addBtn);
 }
 
-/**
- * =================================================================
- * تعديل: الاحتفاظ ببيانات العميل في الفاتورة
- * =================================================================
- * * تم تعديل هذه الدالة لتقوم بملء حقول بيانات العميل
- * بالقيم المحفوظة في كائن الفاتورة (receipt object).
- */
 function renderActiveReceiptContent() {
     const activeReceipt = state.receipts.find(r => r.id === state.activeReceiptId);
     const contentContainer = document.getElementById('active-receipt-content');
@@ -727,7 +738,6 @@ function renderCart(receiptId) {
     const deliveryFee = freeDeliveryCheckbox.checked ? 0 : parseFloat(deliveryFeeEl.value) || 0;
     total += deliveryFee;
 
-    // If from booking, subtract deposit for display purposes
     if (receipt.isFromBooking && receipt.originalDeposit > 0) {
         total -= receipt.originalDeposit;
     }
@@ -754,7 +764,7 @@ function renderBookingPage() {
         );
     }
 
-    listContainer.innerHTML = ''; // Clear previous list
+    listContainer.innerHTML = '';
     if (filteredBookings.length === 0) {
         listContainer.innerHTML = `<p class="text-center text-gray-400 p-4">No open bookings found.</p>`;
         return;
@@ -767,7 +777,6 @@ function renderBookingPage() {
         card.className = 'bg-white p-4 rounded-lg shadow-md';
         const bookingDateTime = new Date(booking.createdAt).toLocaleString();
 
-        // Determine deposit payment method display
         let depositMethodDisplay = '';
         if (booking.deposit > 0 && booking.depositPaymentMethod) {
             depositMethodDisplay = ` (${translations[state.lang][booking.depositPaymentMethod] || booking.depositPaymentMethod})`;
@@ -778,7 +787,7 @@ function renderBookingPage() {
             <div class="flex justify-between items-start">
                 <div>
                     <p class="font-bold text-lg">${booking.customerName || 'No Name'} <span class="text-sm font-normal text-gray-500">(${booking.customerPhone || 'No Phone'})</span></p>
-                    <p class="text-xs text-gray-400">ID: ${booking.id}</p>
+                    <p class="text-xs text-gray-400">ID: ${booking.id} | By: ${booking.seller || 'N/A'}</p>
                     <p class="text-xs text-gray-400">Date: ${bookingDateTime}</p>
                 </div>
                 <div class="flex items-center space-x-2">
@@ -822,7 +831,7 @@ async function saveReceiptAsBooking(receiptId, deposit) {
     const customerAddress = container.querySelector('.customer-address-input').value.trim();
     const customerCity = container.querySelector('.customer-city-input').value.trim();
     const isFreeDelivery = container.querySelector('#free-delivery-checkbox').checked;
-    const depositPaymentMethod = container.querySelector('.payment-method-btn.selected')?.dataset.method || 'cash'; // Capture deposit payment method
+    const depositPaymentMethod = container.querySelector('.payment-method-btn.selected')?.dataset.method || 'cash';
 
 
     if (!customerName || !customerPhone) {
@@ -832,16 +841,16 @@ async function saveReceiptAsBooking(receiptId, deposit) {
 
     const newBooking = {
         id: getDailyId('B', state.bookings),
-        cart: JSON.parse(JSON.stringify(receipt.cart)), // Deep copy
+        cart: JSON.parse(JSON.stringify(receipt.cart)),
         customerName,
         customerPhone,
         customerAddress,
         customerCity,
         deposit: deposit,
-        depositPaymentMethod: depositPaymentMethod, // Save deposit payment method
+        depositPaymentMethod: depositPaymentMethod,
         seller: receipt.seller,
         isCompleted: false,
-        isFreeDelivery: isFreeDelivery, // Add free delivery status
+        isFreeDelivery: isFreeDelivery,
         createdAt: new Date().toISOString()
     };
 
@@ -863,7 +872,6 @@ async function saveReceiptAsBooking(receiptId, deposit) {
     showNotification(translations[state.lang].bookingSaved, 'success');
 }
 
-// Function to delete a booking and optionally restore stock
 async function deleteBooking(bookingId, restoreStock = true, doSave = true) {
     const bookingIndex = state.bookings.findIndex(b => b.id === bookingId);
     if (bookingIndex === -1) {
@@ -890,7 +898,6 @@ async function deleteBooking(bookingId, restoreStock = true, doSave = true) {
     }
 }
 
-// Function to print a booking receipt
 async function printBooking(bookingId) {
     try {
         const booking = state.bookings.find(b => b.id === bookingId);
@@ -913,7 +920,6 @@ async function printBooking(bookingId) {
         const subtotal = booking.cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
         const amountDue = subtotal - booking.deposit;
 
-        // Get deposit payment method for printing
         const depositMethodPrint = booking.depositPaymentMethod ? ` (${translations[state.lang][booking.depositPaymentMethod] || booking.depositPaymentMethod})` : '';
 
         template = template.replace('{{bookingDate}}', new Date(booking.createdAt).toLocaleString())
@@ -922,10 +928,10 @@ async function printBooking(bookingId) {
             .replace('{{customerName}}', booking.customerName || 'N/A')
             .replace('{{customerPhone}}', booking.customerPhone || 'N/A')
             .replace('{{customerAddress}}', booking.customerAddress || 'N/A')
-            .replace('{{customerCity}}', booking.customerCity || 'N/A') // Pass customerCity to template
+            .replace('{{customerCity}}', booking.customerCity || 'N/A')
             .replace('{{itemsHtml}}', itemsHtml)
             .replace('{{subtotal}}', subtotal.toFixed(2))
-            .replace('{{deposit}}', booking.deposit.toFixed(2) + depositMethodPrint) // Include method here
+            .replace('{{deposit}}', booking.deposit.toFixed(2) + depositMethodPrint)
             .replace('{{amountDue}}', amountDue.toFixed(2))
             .replace('{{logoSrc}}', logoBase64 || '');
 
@@ -1002,7 +1008,6 @@ function showEditBookingModal(bookingId) {
     updateUIText();
     modal.classList.remove('hidden');
 
-    // Ensure listeners are attached AFTER content is set
     document.getElementById('edit-booking-form').addEventListener('submit', handleEditBookingSubmit);
     document.getElementById('cancel-edit-booking-btn').addEventListener('click', closeEditBookingModal);
 }
@@ -1017,7 +1022,7 @@ async function handleEditBookingSubmit(e) {
     booking.customerAddress = document.getElementById('edit-customer-address').value.trim();
     booking.customerCity = document.getElementById('edit-customer-city').value.trim();
     booking.deposit = parseFloat(document.getElementById('edit-deposit').value) || 0;
-    booking.depositPaymentMethod = document.getElementById('edit-deposit-payment-method').value; // Save deposit payment method
+    booking.depositPaymentMethod = document.getElementById('edit-deposit-payment-method').value;
     booking.isFreeDelivery = document.getElementById('edit-free-delivery').checked;
 
     await saveData();
@@ -1042,25 +1047,21 @@ async function completeSaleFromBooking(bookingId) {
     createNewReceipt(false);
     const newReceipt = state.receipts.find(r => r.id === state.activeReceiptId);
 
-    // Deep copy the cart items to the new receipt
     newReceipt.cart = JSON.parse(JSON.stringify(booking.cart));
-    newReceipt.isFromBooking = true; // Flag that this receipt originated from a booking
-    newReceipt.originalDeposit = booking.deposit; // Store the original deposit
-    newReceipt.depositPaymentMethod = booking.depositPaymentMethod; // Store deposit payment method from booking
+    newReceipt.isFromBooking = true;
+    newReceipt.originalDeposit = booking.deposit;
+    newReceipt.depositPaymentMethod = booking.depositPaymentMethod;
 
-    // Copy customer data from booking to receipt
     newReceipt.customerName = booking.customerName;
     newReceipt.customerPhone = booking.customerPhone;
     newReceipt.customerAddress = booking.customerAddress;
     newReceipt.customerCity = booking.customerCity;
 
-
-    // Delete the booking without restoring stock as it's being converted to a sale
-    await deleteBooking(booking.id, false, false); // Do not restore stock, do not save immediately
+    await deleteBooking(booking.id, false, false);
 
     state.currentPage = 'selling-page';
-    await saveData(); // Save after deleting the booking and updating state
-    render(); // This will now render the new receipt with customer data
+    await saveData();
+    render();
 
     showNotification('Booking loaded to a new receipt for completion.', 'success');
 }
@@ -1086,7 +1087,7 @@ function renderCustomersPage() {
 
     tbody.innerHTML = '';
     if (filteredCustomers.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" class="text-center p-4">No customers found.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" class="text-center p-4">No customers found.</td></tr>`;
         return;
     }
 
@@ -1100,9 +1101,16 @@ function renderCustomersPage() {
             <td class="p-4">${customer.city || 'N/A'}</td>
             <td class="p-4">${customer.totalItemsBought}</td>
             <td class="p-4">${customer.lastPaymentDate ? new Date(customer.lastPaymentDate).toLocaleDateString() : 'N/A'}</td>
+            <td class="p-4">
+                <div class="flex space-x-2">
+                    <button class="edit-customer-btn btn-secondary text-xs py-1 px-2 rounded" data-id="${customer.id}">Edit</button>
+                    <button class="delete-customer-btn btn-danger text-xs py-1 px-2 rounded" data-id="${customer.id}">Delete</button>
+                </div>
+            </td>
         `;
         tbody.appendChild(row);
     });
+    updateUIText();
 }
 
 function renderSalariesPage() {
@@ -1110,38 +1118,77 @@ function renderSalariesPage() {
     const searchTerm = state.salariesSearchTerm.toLowerCase();
     tbody.innerHTML = '';
 
-    let filteredUsers = state.users;
-    if (searchTerm) {
-        filteredUsers = filteredUsers.filter(u => u.username.toLowerCase().includes(searchTerm));
+    if (!state.selectedSalariesMonth) {
+        state.selectedSalariesMonth = new Date().toISOString().slice(0, 7);
+        document.getElementById('salaries-month-picker').value = state.selectedSalariesMonth;
     }
 
-    filteredUsers.forEach(user => {
-        // Ensure salary data exists for the user, initialize if not
-        const userData = state.salaries[user.username] || { fixed: 0, commission: 0, bonus: 0 };
-        if (userData.bonus === undefined) { // Initialize bonus if it's missing from old data
-            userData.bonus = 0;
-        }
+    const salesThisMonth = state.sales.filter(sale => sale.createdAt.startsWith(state.selectedSalariesMonth));
 
-        const piecesSold = state.sales
+    let filteredUsers = state.users;
+    if (searchTerm) {
+        filteredUsers = filteredUsers.filter(u => u.username.toLowerCase().includes(searchTerm) || (u.employeeId && u.employeeId.toLowerCase().includes(searchTerm)));
+    }
+
+    const thead = document.getElementById('salaries-table').querySelector('thead tr');
+    if (!thead.querySelector('[data-lang-key="colEmployeeId"]')) {
+        thead.innerHTML = `
+            <th class="p-4" data-lang-key="colEmployeeId">Employee ID</th>
+            <th class="p-4" data-lang-key="colUserName">User Name</th>
+            <th class="p-4" data-lang-key="colCustomerPhone">Phone</th>
+            <th class="p-4" data-lang-key="colFixedSalary">Fixed Salary</th>
+            <th class="p-4" data-lang-key="colCommissionPerPiece">Commission / Piece</th>
+            <th class="p-4" data-lang-key="colBonus">Bonus</th>
+            <th class="p-4" data-lang-key="colPiecesSold">Pieces Sold</th>
+            <th class="p-4" data-lang-key="colTotalCommission">Total Commission</th>
+            <th class="p-4" data-lang-key="colTotalSalary">Total Salary</th>
+            <th class="p-4">Paid Status</th>
+            <th class="p-4" data-lang-key="colActions">Actions</th>
+        `;
+    }
+
+
+    filteredUsers.forEach(user => {
+        const userData = state.salaries[user.username] || { fixed: 0, commission: 0, bonus: 0 };
+        if (userData.bonus === undefined) userData.bonus = 0;
+
+        const piecesSold = salesThisMonth
             .filter(sale => sale.cashier === user.username)
             .reduce((total, sale) => total + sale.items.reduce((itemTotal, item) => itemTotal + (item.quantity - (item.returnedQty || 0)), 0), 0);
 
         const totalCommission = piecesSold * userData.commission;
-        const totalSalary = userData.fixed + totalCommission + userData.bonus; // Include bonus in total salary
+        const totalSalary = userData.fixed + totalCommission + userData.bonus;
+
+        const paidStatusKey = `${user.username}-${state.selectedSalariesMonth}`;
+        const isPaid = state.salariesPaidStatus[paidStatusKey] || false;
 
         const row = document.createElement('tr');
-        row.className = "border-b border-gray-200";
+        row.className = `border-b border-gray-200 ${isPaid ? 'paid-salary-row' : ''}`;
         row.innerHTML = `
+            <td class="p-4">${user.employeeId || 'N/A'}</td>
             <td class="p-4 font-bold">${user.username}</td>
-            <td class="p-4"><input type="number" class="salary-input w-32 p-2 rounded-lg" data-user="${user.username}" data-type="fixed" value="${userData.fixed}"></td>
-            <td class="p-4"><input type="number" class="salary-input w-32 p-2 rounded-lg" data-user="${user.username}" data-type="commission" value="${userData.commission}"></td>
-            <td class="p-4"><input type="number" class="salary-input w-32 p-2 rounded-lg" data-user="${user.username}" data-type="bonus" value="${userData.bonus}"></td>
+            <td class="p-4">${user.phone || 'N/A'}</td>
+            <td class="p-4"><input type="number" class="salary-input w-24 p-2 rounded-lg" data-user="${user.username}" data-type="fixed" value="${userData.fixed}"></td>
+            <td class="p-4"><input type="number" class="salary-input w-24 p-2 rounded-lg" data-user="${user.username}" data-type="commission" value="${userData.commission}"></td>
+            <td class="p-4"><input type="number" class="salary-input w-24 p-2 rounded-lg" data-user="${user.username}" data-type="bonus" value="${userData.bonus}"></td>
             <td class="p-4">${piecesSold}</td>
             <td class="p-4">${totalCommission.toFixed(2)} EGP</td>
             <td class="p-4 font-bold text-lg">${totalSalary.toFixed(2)} EGP</td>
+            <td class="p-4">
+                <button class="toggle-paid-btn py-2 px-4 rounded-lg text-white text-xs ${isPaid ? 'bg-green-500 hover:bg-green-600' : 'bg-red-500 hover:bg-red-600'}" data-user="${user.username}" data-month="${state.selectedSalariesMonth}">
+                    ${isPaid ? translations[state.lang].paid : translations[state.lang].unpaid}
+                </button>
+            </td>
+            <td class="p-4">
+                <div class="flex space-x-1">
+                    <button class="edit-employee-btn btn-secondary text-xs py-1 px-2 rounded" data-username="${user.username}" data-lang-key="btnEdit">Edit</button>
+                    <button class="delete-employee-btn btn-danger text-xs py-1 px-2 rounded" data-username="${user.username}" data-lang-key="btnDelete">Delete</button>
+                </div>
+            </td>
         `;
         tbody.appendChild(row);
     });
+    updateUIText();
 }
 
 
@@ -1160,7 +1207,6 @@ function setupEventListeners() {
             renderSalariesPage();
         }
 
-        // --- تعديل: حفظ بيانات العميل في الفاتورة فور إدخالها ---
         if (e.target.classList.contains('customer-phone-input') ||
             e.target.classList.contains('customer-name-input') ||
             e.target.classList.contains('customer-address-input') ||
@@ -1170,7 +1216,6 @@ function setupEventListeners() {
             if (activeReceipt) {
                 if (e.target.classList.contains('customer-phone-input')) {
                     activeReceipt.customerPhone = e.target.value;
-                    // Auto-fill other details if phone exists
                     const customer = state.customers.find(c => c.phone === e.target.value.trim());
                     if (customer) {
                         const parent = e.target.closest('div.grid');
@@ -1192,8 +1237,8 @@ function setupEventListeners() {
                     activeReceipt.customerCity = e.target.value;
                 }
 
-                renderReceiptTabs(); // تحديث التابات فوراً
-                cartSession.save(); // حفظ التغييرات في الجلسة
+                renderReceiptTabs();
+                cartSession.save();
             }
         }
 
@@ -1208,7 +1253,6 @@ function setupEventListeners() {
         }
         if (['report-month-picker', 'report-day-picker', 'history-search', 'user-filter'].includes(e.target.id)) generateReport();
 
-        // Update item price in cart when selling price input changes
         if (e.target.classList.contains('sale-price')) {
             const container = e.target.closest('[id$="-content"]');
             const productId = container.querySelector('.product-selection').value;
@@ -1237,17 +1281,20 @@ function setupEventListeners() {
             const value = parseFloat(e.target.value) || 0;
 
             if (!state.salaries[username]) {
-                state.salaries[username] = { fixed: 0, commission: 0, bonus: 0 }; // Ensure bonus is initialized
+                state.salaries[username] = { fixed: 0, commission: 0, bonus: 0 };
             }
             state.salaries[username][type] = value;
             saveData();
+            renderSalariesPage();
+        }
+        if (e.target.id === 'salaries-month-picker') {
+            state.selectedSalariesMonth = e.target.value;
             renderSalariesPage();
         }
     });
 
 
     document.addEventListener('keydown', async (e) => {
-        // Safely check if modals are open before attempting to close
         const productModal = document.getElementById('product-modal');
         const barcodeModal = document.getElementById('barcode-modal');
         const receiptSelectionModal = document.getElementById('receipt-selection-modal');
@@ -1256,6 +1303,9 @@ function setupEventListeners() {
         const categoryModal = document.getElementById('category-modal');
         const bookingConfirmationModal = document.getElementById('booking-confirmation-modal');
         const bookingEditModal = document.getElementById('booking-edit-modal');
+        const employeeModal = document.getElementById('employee-modal');
+        const customerModal = document.getElementById('customer-modal');
+
 
         if (e.key === 'Escape') {
             if (productModal && !productModal.classList.contains('hidden')) closeProductModal();
@@ -1266,6 +1316,10 @@ function setupEventListeners() {
             else if (categoryModal && !categoryModal.classList.contains('hidden')) closeCategoryModal();
             else if (bookingConfirmationModal && !bookingConfirmationModal.classList.contains('hidden')) closeBookingConfirmationModal();
             else if (bookingEditModal && !bookingEditModal.classList.contains('hidden')) closeEditBookingModal();
+            else if (employeeModal && !employeeModal.classList.contains('hidden')) closeEmployeeModal();
+            else if (customerModal && !customerModal.classList.contains('hidden')) closeCustomerModal();
+
+
         }
 
         if (e.key === 'Enter') {
@@ -1327,21 +1381,9 @@ function setupEventListeners() {
             if (state.isAdminMode) {
                 window.api.openUsersWindow();
             } else {
-                showAdminPasswordModal();
-                const adminForm = document.getElementById('admin-password-form');
-                const submitHandler = async function (ev) {
-                    ev.preventDefault();
-                    const password = document.getElementById('admin-password-input').value;
-                    const result = await window.api.validateAdminPassword(password);
-                    if (result.success) {
-                        closeAdminPasswordModal();
-                        await window.api.openUsersWindow();
-                        adminForm.removeEventListener('submit', submitHandler);
-                    } else {
-                        document.getElementById('admin-password-error').classList.remove('hidden');
-                    }
-                };
-                adminForm.addEventListener('submit', submitHandler);
+                showAdminPasswordModal((password) => {
+                    window.api.openUsersWindow();
+                });
             }
         }
 
@@ -1369,7 +1411,7 @@ function setupEventListeners() {
         if (e.key === 'F9' || e.key === 'F10') {
             if (state.currentPage === 'selling-page') {
                 e.preventDefault();
-                const method = e.key === 'F9' ? 'cash' : 'card'; // Assuming F9 for cash, F10 for card
+                const method = e.key === 'F9' ? 'cash' : 'card';
                 await handleShortcutSale(method);
             }
         }
@@ -1414,9 +1456,28 @@ function setupEventListeners() {
         if (e.target.id === 'export-salaries-btn') {
             exportSalariesToExcel();
         }
-        // New: Export Returns to PDF button handler
         if (e.target.id === 'export-returns-pdf-btn') {
             await exportReturnsToPDF();
+        }
+
+        if (e.target.closest('.toggle-paid-btn')) {
+            const button = e.target.closest('.toggle-paid-btn');
+            const { user, month } = button.dataset;
+            const paidStatusKey = `${user}-${month}`;
+            state.salariesPaidStatus[paidStatusKey] = !state.salariesPaidStatus[paidStatusKey];
+            await saveData();
+            renderSalariesPage();
+        }
+
+        if (e.target.closest('.edit-employee-btn')) {
+            const username = e.target.closest('.edit-employee-btn').dataset.username;
+            const employee = state.users.find(u => u.username === username);
+            if (employee) showEmployeeModal(employee);
+        }
+
+        if (e.target.closest('.delete-employee-btn')) {
+            const username = e.target.closest('.delete-employee-btn').dataset.username;
+            handleDeleteEmployee(username);
         }
 
 
@@ -1455,6 +1516,11 @@ function setupEventListeners() {
         if (e.target.id === 'add-category-btn') await handleAddCategory();
         if (e.target.classList.contains('delete-category-btn')) await handleDeleteCategory(e.target.dataset.category);
         if (e.target.id === 'add-receipt-btn') createNewReceipt();
+        if (e.target.id === 'add-employee-btn') showEmployeeModal();
+        if (e.target.id === 'cancel-employee-modal-btn') closeEmployeeModal();
+        if (e.target.id === 'add-customer-btn') showCustomerModal();
+        if (e.target.id === 'cancel-customer-modal-btn') closeCustomerModal();
+
 
         if (e.target.closest('.receipt-tab')) {
             const tab = e.target.closest('.receipt-tab');
@@ -1468,7 +1534,7 @@ function setupEventListeners() {
             } else if (tab.dataset.bookingId) {
                 const bookingId = tab.dataset.bookingId;
                 if (e.target.classList.contains('close-booking-btn')) {
-                    // closeBooking(bookingId); // This function does not exist
+                    // closeBooking(bookingId);
                 }
             }
         }
@@ -1568,9 +1634,9 @@ function setupEventListeners() {
                         product.colors[item.color].sizes[item.size].quantity += item.quantity;
                     }
                     booking.cart.splice(itemIndex, 1);
-                    renderBookingPage(); // Re-render the booking page to update stock display
+                    renderBookingPage();
                 }
-            } else { // 'receipt'
+            } else {
                 const receiptId = e.target.dataset.receiptId;
                 const receipt = state.receipts.find(r => r.id === receiptId);
                 if (receipt && receipt.cart[itemIndex]) {
@@ -1602,14 +1668,11 @@ function setupEventListeners() {
         if (e.target.id === 'export-pdf-btn') await exportReportToPDF();
         if (e.target.id === 'manage-users-btn') window.api.openUsersWindow();
         if (e.target.id === 'export-inventory-btn') await exportInventoryToPDF();
-        // Removed calculate-shift-btn handler as per request
-        // if (e.target.id === 'calculate-shift-btn') await generateShiftReport();
 
         if (e.target.classList.contains('remove-image-preview-btn')) {
             e.target.parentElement.remove();
         }
 
-        // Booking specific buttons
         if (e.target.classList.contains('delete-booking-btn')) {
             const bookingId = e.target.dataset.bookingId;
             if (confirm('Are you sure you want to delete this booking? This will restore the stock.')) {
@@ -1628,10 +1691,19 @@ function setupEventListeners() {
             const bookingId = e.target.dataset.bookingId;
             await printBooking(bookingId);
         }
-        // Make the entire button clickable for edit-booking-btn
         if (e.target.closest('.edit-booking-btn')) {
             const bookingId = e.target.closest('.edit-booking-btn').dataset.bookingId;
             showEditBookingModal(bookingId);
+        }
+
+        if (e.target.closest('.edit-customer-btn')) {
+            const customerId = e.target.closest('.edit-customer-btn').dataset.id;
+            const customer = state.customers.find(c => c.id === customerId);
+            if (customer) showCustomerModal(customer);
+        }
+        if (e.target.closest('.delete-customer-btn')) {
+            const customerId = e.target.closest('.delete-customer-btn').dataset.id;
+            handleDeleteCustomer(customerId);
         }
 
     });
@@ -1730,6 +1802,17 @@ function setupEventListeners() {
         });
     }
 
+    const employeeForm = document.getElementById('employee-form');
+    if (employeeForm) {
+        employeeForm.addEventListener('submit', handleEmployeeFormSubmit);
+    }
+
+    const customerForm = document.getElementById('customer-form');
+    if (customerForm) {
+        customerForm.addEventListener('submit', handleCustomerFormSubmit);
+    }
+
+
     const cancelAdminBtn = document.getElementById('cancel-admin-password-btn');
     if (cancelAdminBtn) cancelAdminBtn.addEventListener('click', closeAdminPasswordModal);
 
@@ -1755,13 +1838,6 @@ function updateCartIconCount() {
     cartCountEl.classList.toggle('hidden', totalItems === 0);
 }
 
-/**
- * =================================================================
- * تعديل: إضافة بيانات العميل للفاتورة الجديدة
- * =================================================================
- * * تم إضافة حقول جديدة لكائن الفاتورة لحفظ بيانات العميل
- * مباشرة عند إنشاء الفاتورة.
- */
 function createNewReceipt(doRender = true) {
     if (state.receipts.length >= 30) {
         showNotification("Maximum of 30 receipts reached.", "info");
@@ -1774,7 +1850,6 @@ function createNewReceipt(doRender = true) {
         isFromBooking: false,
         originalDeposit: 0,
         depositPaymentMethod: '',
-        // إضافة حقول جديدة لحفظ بيانات العميل مع الفاتورة
         customerName: '',
         customerPhone: '',
         customerAddress: '',
@@ -1884,7 +1959,7 @@ function handleAddToBookingCart(itemData, buttonElement = null) {
         }
 
         product.colors[color].sizes[size].quantity -= quantity;
-        renderBookingPage(); // Re-render the booking page to update stock display
+        renderBookingPage();
 
         if (buttonElement) {
             // UI feedback for the button
@@ -1892,13 +1967,6 @@ function handleAddToBookingCart(itemData, buttonElement = null) {
     }
 }
 
-/**
- * =================================================================
- * تعديل: عدم حذف بيانات المنتج بعد إضافته للسلة
- * =================================================================
- * * تم حذف الجزء الأخير من هذه الدالة الذي كان يقوم بتفريغ
- * حقول اختيار المنتج واللون والمقاس بعد إضافة المنتج للسلة.
- */
 function addToCart(itemData, receiptId, buttonElement = null) {
     const { productId, color, size, quantity } = itemData;
 
@@ -1912,7 +1980,7 @@ function addToCart(itemData, receiptId, buttonElement = null) {
     const selectedColor = color || activeReceiptContent?.querySelector('.sale-color')?.value;
     const selectedSize = size || activeReceiptContent?.querySelector('.sale-size')?.value;
     const qty = quantity || parseInt(activeReceiptContent?.querySelector('.sale-quantity')?.value, 10);
-    const price = parseFloat(activeReceiptContent?.querySelector('.sale-price')?.value) || product.sellingPrice; // Get price from input
+    const price = parseFloat(activeReceiptContent?.querySelector('.sale-price')?.value) || product.sellingPrice;
 
     if (!selectedColor || !selectedSize) {
         showNotification("Please select a color and size.", "error");
@@ -1944,7 +2012,7 @@ function addToCart(itemData, receiptId, buttonElement = null) {
         product.colors[selectedColor].sizes[selectedSize].quantity -= qty;
 
         cartSession.save();
-        render(); // Re-render to update cart and icon count
+        render();
 
         if (buttonElement) {
             const originalText = buttonElement.textContent;
@@ -1968,7 +2036,6 @@ async function completeSale() {
     const container = document.getElementById(`receipt-content-${state.activeReceiptId}`);
     if (!container) return;
 
-    // استخدام البيانات المحفوظة في الفاتورة مباشرة
     const { customerPhone, customerName, customerAddress, customerCity } = activeReceipt;
 
     const isFreeDelivery = container.querySelector('#free-delivery-checkbox').checked;
@@ -1986,7 +2053,7 @@ async function completeSale() {
         } else if (discountAmount > 0) {
             calculatedDiscount = discountAmount;
         }
-        calculatedDiscount = Math.min(calculatedDiscount, subtotal); // Ensure discount doesn't exceed subtotal
+        calculatedDiscount = Math.min(calculatedDiscount, subtotal);
 
         const totalBeforeDepositAndPaid = subtotal - calculatedDiscount + deliveryFee;
 
@@ -2002,10 +2069,10 @@ async function completeSale() {
             id: getDailyId('S', state.sales),
             cashier: activeReceipt.seller || (state.currentUser ? state.currentUser.username : 'N/A'),
             createdAt: new Date().toISOString(),
-            totalAmount: totalBeforeDepositAndPaid, // This is the true total before any previous deposit
-            paidAmount: paidAmountAtTransaction, // Amount paid in THIS transaction
-            depositPaidOnBooking: activeReceipt.originalDeposit || 0, // Deposit from a previous booking
-            profit: activeReceipt.cart.reduce((sum, item) => sum + (item.price - item.purchasePrice) * item.quantity, 0) - calculatedDiscount, // Profit calculation
+            totalAmount: totalBeforeDepositAndPaid,
+            paidAmount: paidAmountAtTransaction,
+            depositPaidOnBooking: activeReceipt.originalDeposit || 0,
+            profit: activeReceipt.cart.reduce((sum, item) => sum + (item.price - item.purchasePrice) * item.quantity, 0) - calculatedDiscount,
             discountAmount: calculatedDiscount,
             subtotal,
             paymentMethod: paymentMethod,
@@ -2103,6 +2170,7 @@ async function handleShortcutSale(paymentMethod) {
     await completeSale();
 }
 
+// --- تعديل: الحفاظ على الصور عند تعديل المنتج ---
 async function handleProductFormSubmit(e) {
     e.preventDefault();
     const form = document.getElementById('product-form');
@@ -2129,7 +2197,8 @@ async function handleProductFormSubmit(e) {
 
     const mainBarcode = document.getElementById('main-barcode').value.trim();
 
-    const existingImages = Array.from(document.querySelectorAll('#image-previews-container img:not(.new-preview)'))
+    // الحصول على الصور الموجودة بالفعل والتي لم يتم حذفها
+    const existingImages = Array.from(document.querySelectorAll('#image-previews-container img'))
         .map(img => img.src);
 
     const processNewImages = async () => {
@@ -2147,6 +2216,7 @@ async function handleProductFormSubmit(e) {
 
     try {
         const newImages = await processNewImages();
+        // دمج الصور القديمة مع الجديدة
         const allImages = [...existingImages, ...newImages];
 
         const newCategory = document.getElementById('product-category').value.trim();
@@ -2210,6 +2280,7 @@ async function handleProductFormSubmit(e) {
         showNotification("Error saving product.", "error");
     }
 }
+
 
 function handleSaleColorChange(container) {
     if (!container) return;
@@ -2404,7 +2475,7 @@ async function printReceipt(saleId) {
         let returnsSectionHtml = '';
         let totalReturnsValue = 0;
         let displayPaidAmount = sale.paidAmount.toFixed(2);
-        let displayChangeAmount = (sale.paidAmount - (sale.totalAmount - (sale.depositPaidOnBooking || 0))).toFixed(2); // Change based on totalAmount - depositPaidOnBooking
+        let displayChangeAmount = (sale.paidAmount - (sale.totalAmount - (sale.depositPaidOnBooking || 0))).toFixed(2);
 
         let customerInfoHtml = '';
         if (sale.customerName) {
@@ -2437,7 +2508,6 @@ async function printReceipt(saleId) {
             displayChangeAmount = totalReturnsValue.toFixed(2);
         }
 
-        // Determine the total display based on whether a deposit was paid on a booking
         let finalTotalDisplayHtml;
         if (sale.depositPaidOnBooking > 0) {
             const amountRemaining = sale.totalAmount - sale.depositPaidOnBooking;
@@ -2460,15 +2530,14 @@ async function printReceipt(saleId) {
             .replace('{{subtotal}}', sale.subtotal.toFixed(2))
             .replace('{{discountAmount}}', sale.discountAmount.toFixed(2))
             .replace('{{totalReturns}}', totalReturnsValue.toFixed(2))
-            .replace('{{deliveryFee}}', sale.deliveryFee.toFixed(2)) // Pass deliveryFee to template
+            .replace('{{deliveryFee}}', sale.deliveryFee.toFixed(2))
             .replace('{{paidAmount}}', displayPaidAmount)
             .replace('{{changeAmount}}', displayChangeAmount)
             .replace('{{logoSrc}}', logoBase64 || '');
 
-        // Now, replace the total section in the template with the new dynamic HTML
         template = template.replace(
-            `<div id="final-total-section"></div>`, // New placeholder from receipt.html
-            finalTotalDisplayHtml // New dynamic HTML
+            `<div id="final-total-section"></div>`,
+            finalTotalDisplayHtml
         );
 
 
@@ -2497,28 +2566,27 @@ async function createSalesReportPDF(salesData, reportTitle) {
     let totalReturnsCount = 0;
     let totalReturnsValue = 0;
     let totalCashSales = 0;
-    let totalInstaPaySales = 0; // New
-    let totalVCashSales = 0; // New
-    let totalFreeDeliveries = 0; // New: Counter for free deliveries
+    let totalInstaPaySales = 0;
+    let totalVCashSales = 0;
+    let totalFreeDeliveries = 0;
 
     salesData.forEach(sale => {
         const cashier = sale.cashier || 'Unknown';
         if (!cashierSales[cashier]) {
             cashierSales[cashier] = { revenue: 0, profit: 0 };
         }
-        // Use totalAmount (true total) for revenue calculation in reports
         cashierSales[cashier].revenue += sale.totalAmount;
         cashierSales[cashier].profit += sale.profit;
 
         if (sale.paymentMethod === 'cash') {
-            totalCashSales += sale.totalAmount; // Sum of true totals for cash sales
+            totalCashSales += sale.totalAmount;
         } else if (sale.paymentMethod === 'instaPay') {
-            totalInstaPaySales += sale.totalAmount; // Sum of true totals for InstaPay sales
+            totalInstaPaySales += sale.totalAmount;
         } else if (sale.paymentMethod === 'vCash') {
-            totalVCashSales += sale.totalAmount; // Sum of true totals for VCash sales
+            totalVCashSales += sale.totalAmount;
         }
 
-        if (sale.isFreeDelivery) { // Count sales with free delivery
+        if (sale.isFreeDelivery) {
             totalFreeDeliveries++;
         }
 
@@ -2614,7 +2682,6 @@ async function exportReportToPDF() {
     await createSalesReportPDF(getFilteredSales(), "Sales Report");
 }
 
-// NEW: Function to export returns to PDF
 async function exportReturnsToPDF() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
@@ -2627,9 +2694,7 @@ async function exportReturnsToPDF() {
     state.sales.forEach(sale => {
         const returnedItems = sale.items.filter(item => (item.returnedQty || 0) > 0);
         if (returnedItems.length > 0) {
-            // Calculate original total for the sale
             const originalTotal = sale.subtotal - sale.discountAmount + sale.deliveryFee;
-            // Calculate net total after returns for the sale
             let netTotalAfterReturn = originalTotal;
             let totalReturnedValueForSale = 0;
 
@@ -2668,7 +2733,7 @@ async function exportReturnsToPDF() {
 
     if (logoBase64) doc.addImage(logoBase64, 'PNG', 14, 12, 12, 12);
     doc.setFontSize(14);
-    doc.text("Unique Bags", 28, 20); // Use Unique Bags for returns report
+    doc.text("Unique Bags", 28, 20);
     doc.setFontSize(20);
     doc.setFont('helvetica', 'bold');
     doc.text(translations[state.lang].exportReturns || "Returns Report", doc.internal.pageSize.getWidth() / 2, 20, { align: 'center' });
@@ -2680,7 +2745,7 @@ async function exportReturnsToPDF() {
     let currentY = 35;
 
     for (const returnSale of returnsData) {
-        if (currentY > 270) { // Check for page overflow
+        if (currentY > 270) {
             doc.addPage();
             currentY = 15;
         }
@@ -2714,10 +2779,10 @@ async function exportReturnsToPDF() {
             headStyles: { fillColor: [45, 55, 72] },
             styles: { fontSize: 8 },
             didDrawPage: function (data) {
-                currentY = data.cursor.y; // Update currentY after table
+                currentY = data.cursor.y;
             }
         });
-        currentY = doc.autoTable.previous.finalY + 10; // Add some margin after table
+        currentY = doc.autoTable.previous.finalY + 10;
     }
 
     doc.save(`Returns_Report_${new Date().toISOString().slice(0, 10)}.pdf`);
@@ -2726,8 +2791,6 @@ async function exportReturnsToPDF() {
 
 
 async function generateShiftReport() {
-    // This function is no longer called by a button in the UI as per user request.
-    // It remains here in case it's needed for other internal logic or future features.
     const reportTime = new Date().toISOString();
     const startTime = state.lastShiftReportTime || new Date(0).toISOString();
 
@@ -2821,7 +2884,6 @@ function generateReport() {
             const canReturn = saleItems.some(item => (item.quantity - (item.returnedQty || 0)) > 0);
             const deliveryInfo = sale.isFreeDelivery ? '<span class="text-green-400 font-bold">Free Delivery</span>' : (sale.deliveryFee > 0 ? `Delivery Fee: ${sale.deliveryFee.toFixed(2)} EGP` : '');
 
-            // Determine the total display based on whether a deposit was paid on a booking
             let totalDisplayHtml;
             if (sale.depositPaidOnBooking > 0) {
                 const amountRemaining = sale.totalAmount - sale.depositPaidOnBooking;
@@ -2865,14 +2927,11 @@ function generateReport() {
     document.getElementById('total-profit').textContent = `${totalProfit.toFixed(2)} EGP`;
     document.getElementById('total-cash-sales').textContent = `${totalCashSales.toFixed(2)} EGP`;
 
-    // Dynamically add/update InstaPay, VCash, and Free Deliveries divs
     const reportSummary = document.getElementById('report-summary');
 
-    // Clear previously added dynamic divs to avoid duplicates
     const dynamicDivs = reportSummary.querySelectorAll('[id$="-sales-div"], [id$="-deliveries-div"]');
     dynamicDivs.forEach(div => div.remove());
 
-    // Add InstaPay and VCash divs next to Total Cash Sales
     let totalCashSalesDiv = document.getElementById('total-cash-sales').closest('.bg-gray-100');
     if (totalCashSalesDiv) {
         const parentGrid = totalCashSalesDiv.parentNode;
@@ -2885,7 +2944,6 @@ function generateReport() {
                 <h3 class="font-bold" data-lang-key="totalInstaPaySales">Total InstaPay Sales</h3>
                 <p id="total-instapay-sales">${totalInstaPaySales.toFixed(2)} EGP</p>
             `;
-            // Insert after Total Cash Sales
             parentGrid.insertBefore(instaPayDiv, totalCashSalesDiv.nextSibling);
         }
 
@@ -2893,7 +2951,6 @@ function generateReport() {
             const vCashDiv = document.createElement('div');
             vCashDiv.id = 'total-vcash-sales-div';
             vCashDiv.className = 'bg-gray-100 p-4 rounded-lg';
-            // Insert after InstaPay if it exists, otherwise after Cash Sales
             const insertAfter = document.getElementById('total-instapay-sales-div') || totalCashSalesDiv;
             parentGrid.insertBefore(vCashDiv, insertAfter.nextSibling);
 
@@ -2915,13 +2972,7 @@ function generateReport() {
         reportSummary.appendChild(freeDeliveryDiv);
     }
 
-    // The "Total Card Sales" element is now removed from HTML, so no need to update it.
-    // let totalCardSalesEl = document.getElementById('total-card-sales');
-    // if (totalCardSalesEl) {
-    //     totalCardSalesEl.textContent = `${(totalInstaPaySales + totalVCashSales).toFixed(2)} EGP`;
-    // }
-
-    updateUIText(); // Re-apply translations after updating report summary HTML
+    updateUIText();
 
     document.getElementById('total-items-sold').textContent = totalItemsSold;
     document.getElementById('total-items-returned').textContent = totalItemsReturned;
@@ -2965,7 +3016,6 @@ function exportCustomersToExcel() {
     showNotification('Customers data exported successfully!', 'success');
 }
 
-// Function to export salaries data to an Excel sheet
 async function exportSalariesToExcel() {
     const searchTerm = document.getElementById('salaries-search-input').value.toLowerCase();
     let filteredUsers = state.users;
@@ -2974,18 +3024,18 @@ async function exportSalariesToExcel() {
     }
 
     const dataForSheet = filteredUsers.map(user => {
-        const userData = state.salaries[user.username] || { fixed: 0, commission: 0, bonus: 0 }; // Ensure bonus is retrieved
+        const userData = state.salaries[user.username] || { fixed: 0, commission: 0, bonus: 0 };
         const piecesSold = state.sales
             .filter(sale => sale.cashier === user.username)
             .reduce((total, sale) => total + sale.items.reduce((itemTotal, item) => itemTotal + (item.quantity - (item.returnedQty || 0)), 0), 0);
         const totalCommission = piecesSold * userData.commission;
-        const totalSalary = userData.fixed + totalCommission + userData.bonus; // Include bonus in total salary
+        const totalSalary = userData.fixed + totalCommission + userData.bonus;
 
         return {
             "User Name": user.username,
             "Fixed Salary": userData.fixed.toFixed(2),
             "Commission / Piece": userData.commission.toFixed(2),
-            "Bonus": userData.bonus.toFixed(2), // Export bonus
+            "Bonus": userData.bonus.toFixed(2),
             "Pieces Sold": piecesSold,
             "Total Commission": totalCommission.toFixed(2),
             "Total Salary": totalSalary.toFixed(2)
@@ -2997,7 +3047,7 @@ async function exportSalariesToExcel() {
     XLSX.utils.book_append_sheet(workbook, worksheet, "Salaries Report");
 
     worksheet['!cols'] = [
-        { wch: 20 }, { wch: 15 }, { wch: 20 }, { wch: 10 }, { wch: 15 }, { wch: 20 }, { wch: 20 } // Adjust column widths for bonus
+        { wch: 20 }, { wch: 15 }, { wch: 20 }, { wch: 10 }, { wch: 15 }, { wch: 20 }, { wch: 20 }
     ];
 
     XLSX.writeFile(workbook, `Salaries_Report_${new Date().toISOString().slice(0, 10)}.xlsx`);
@@ -3123,13 +3173,46 @@ function populateUserFilter() {
 }
 
 // --- Modal Control Functions ---
-function showAdminPasswordModal() {
+function showAdminPasswordModal(callback) {
     const modal = document.getElementById('admin-password-modal');
     modal.classList.remove('hidden');
-    document.getElementById('admin-password-input').value = '';
-    document.getElementById('admin-password-error').classList.add('hidden');
-    document.getElementById('admin-password-input').focus();
+    const form = document.getElementById('admin-password-form');
+    const input = document.getElementById('admin-password-input');
+    const error = document.getElementById('admin-password-error');
+
+    input.value = '';
+    error.classList.add('hidden');
+    input.focus();
+
+    const handler = async (e) => {
+        e.preventDefault();
+        const password = input.value;
+        if (!callback) { // Original login behavior
+            const result = await window.api.validateAdminPassword(password);
+            if (result.success) {
+                state.isAdminMode = true;
+                closeAdminPasswordModal();
+                render();
+            } else {
+                error.classList.remove('hidden');
+            }
+        } else { // Behavior for callbacks
+            if (password) {
+                callback(password);
+            }
+        }
+    };
+
+    form.addEventListener('submit', handler, { once: true });
+
+    const cancelBtn = document.getElementById('cancel-admin-password-btn');
+    const cancelHandler = () => {
+        form.removeEventListener('submit', handler);
+        closeAdminPasswordModal();
+    };
+    cancelBtn.addEventListener('click', cancelHandler, { once: true });
 }
+
 
 function closeAdminPasswordModal() {
     document.getElementById('admin-password-modal').classList.add('hidden');
@@ -3145,6 +3228,186 @@ function showBookingConfirmationModal(receiptId) {
 function closeBookingConfirmationModal() {
     document.getElementById('booking-confirmation-modal').classList.add('hidden');
 }
+
+// --- تعديل: إزالة طلب كلمة المرور من دوال الموظفين ---
+function showEmployeeModal(employee = null) {
+    state.editingEmployeeUsername = employee ? employee.username : null;
+    const isEditing = employee !== null;
+
+    const modal = document.getElementById('employee-modal');
+    const titleEl = document.getElementById('employee-modal-title');
+    const form = document.getElementById('employee-form');
+
+    form.reset();
+
+    titleEl.textContent = isEditing ? translations[state.lang].editEmployee : translations[state.lang].addEmployee;
+
+    document.getElementById('employee-id-input').value = isEditing ? employee.username : '';
+
+    const nameInput = document.getElementById('employee-name-input');
+    const employeeIdInput = form.querySelector('#employee-id-input-modal');
+    const phoneInput = document.getElementById('employee-phone-input');
+
+    if (!employeeIdInput) {
+        const idDiv = document.createElement('div');
+        idDiv.innerHTML = `
+            <label for="employee-id-input-modal" class="block mb-1">${translations[state.lang].employeeId}</label>
+            <input type="text" id="employee-id-input-modal" class="w-full p-2 rounded-lg" required>
+        `;
+        nameInput.parentElement.after(idDiv);
+    }
+
+    if (isEditing) {
+        nameInput.value = employee.username;
+        form.querySelector('#employee-id-input-modal').value = employee.employeeId || '';
+        phoneInput.value = employee.phone || '';
+    } else {
+        nameInput.value = '';
+        form.querySelector('#employee-id-input-modal').value = '';
+        phoneInput.value = '';
+    }
+
+    modal.classList.remove('hidden');
+    nameInput.focus();
+}
+
+function closeEmployeeModal() {
+    document.getElementById('employee-modal').classList.add('hidden');
+    state.editingEmployeeUsername = null;
+}
+
+async function handleEmployeeFormSubmit(e) {
+    e.preventDefault();
+    const isEditing = state.editingEmployeeUsername !== null;
+
+    const newUsername = document.getElementById('employee-name-input').value.trim();
+    const newEmployeeId = document.getElementById('employee-id-input-modal').value.trim();
+    const newPhone = document.getElementById('employee-phone-input').value.trim();
+
+    if (!newUsername || !newEmployeeId) {
+        showNotification("Employee name and ID are required.", "error");
+        return;
+    }
+
+    let result;
+    if (isEditing) {
+        result = await window.api.modifyEmployee({
+            originalUsername: state.editingEmployeeUsername,
+            newUsername,
+            newEmployeeId,
+            newPhone
+        });
+    } else {
+        result = await window.api.addEmployee({
+            username: newUsername,
+            employeeId: newEmployeeId,
+            phone: newPhone
+        });
+    }
+
+    if (result.success) {
+        showNotification(`Employee '${newUsername}' saved successfully.`, 'success');
+        closeEmployeeModal();
+        const data = await window.api.loadData();
+        state.users = data.users || [];
+        state.salaries = data.salaries || {};
+        renderSalariesPage();
+        populateUserFilter();
+    } else {
+        showNotification(`Error: ${result.message}`, 'error');
+    }
+}
+
+async function handleDeleteEmployee(username) {
+    if (confirm(`${translations[state.lang].deleteEmployeeConfirm} (${username})`)) {
+        const result = await window.api.deleteEmployee({
+            usernameToDelete: username
+        });
+
+        if (result.success) {
+            showNotification(`Employee '${username}' deleted.`, 'success');
+            const data = await window.api.loadData();
+            state.users = data.users || [];
+            state.salaries = data.salaries || {};
+            renderSalariesPage();
+            populateUserFilter();
+        } else {
+            showNotification(`Error: ${result.message}`, 'error');
+        }
+    }
+}
+
+
+// --- Customer Modal Functions ---
+function showCustomerModal(customer = null) {
+    state.editingCustomerId = customer ? customer.id : null;
+    const modal = document.getElementById('customer-modal');
+    const title = document.getElementById('customer-modal-title');
+    const form = document.getElementById('customer-form');
+
+    title.textContent = customer ? translations[state.lang].editCustomer : translations[state.lang].addCustomer;
+    form.reset();
+    document.getElementById('customer-id-input').value = customer ? customer.id : '';
+
+    if (customer) {
+        document.getElementById('customer-name-input-modal').value = customer.name;
+        document.getElementById('customer-phone-input-modal').value = customer.phone;
+        document.getElementById('customer-address-input-modal').value = customer.address || '';
+        document.getElementById('customer-city-input-modal').value = customer.city || '';
+    }
+
+    modal.classList.remove('hidden');
+    document.getElementById('customer-name-input-modal').focus();
+}
+
+function closeCustomerModal() {
+    document.getElementById('customer-modal').classList.add('hidden');
+    state.editingCustomerId = null;
+}
+
+async function handleCustomerFormSubmit(e) {
+    e.preventDefault();
+    const customerId = document.getElementById('customer-id-input').value;
+    const customerData = {
+        id: customerId || generateUUID(),
+        name: document.getElementById('customer-name-input-modal').value.trim(),
+        phone: document.getElementById('customer-phone-input-modal').value.trim(),
+        address: document.getElementById('customer-address-input-modal').value.trim(),
+        city: document.getElementById('customer-city-input-modal').value.trim(),
+    };
+
+    if (!customerData.name || !customerData.phone) {
+        showNotification("Customer name and phone are required.", "error");
+        return;
+    }
+
+    if (customerId) {
+        const index = state.customers.findIndex(c => c.id === customerId);
+        if (index > -1) {
+            state.customers[index] = { ...state.customers[index], ...customerData };
+        }
+    } else {
+        customerData.totalItemsBought = 0;
+        customerData.lastPaymentDate = null;
+        state.customers.push(customerData);
+    }
+
+    await saveData();
+    closeCustomerModal();
+    renderCustomersPage();
+    showNotification('Customer saved successfully!', 'success');
+}
+
+async function handleDeleteCustomer(customerId) {
+    if (confirm(translations[state.lang].deleteCustomerConfirm)) {
+        state.customers = state.customers.filter(c => c.id !== customerId);
+        await saveData();
+        renderCustomersPage();
+        showNotification('Customer deleted.', 'success');
+    }
+}
+
+
 
 // --- REBUILT MODAL FUNCTIONS ---
 
@@ -3181,6 +3444,7 @@ function createColorEntry(colorName = '', colorData = { sizes: { '': { quantity:
     return colorEntry;
 }
 
+// --- تعديل: إصلاح عرض الصور الموجودة ---
 function showProductModal(product = null) {
     state.editingProductId = product ? product.id : null;
     const modal = document.getElementById('product-modal');
@@ -3190,9 +3454,10 @@ function showProductModal(product = null) {
 
     const categoryOptions = state.categories.filter(c => c !== 'All').map(c => `<option value="${c}" ${product?.category === c ? 'selected' : ''}>${c}</option>`).join('');
 
+    // إزالة فئة 'new-preview' من الصور الموجودة لضمان عدم حذفها
     const imagePreviews = (product?.images || []).map(imgSrc => `
         <div class="relative">
-            <img src="${imgSrc}" class="w-full h-auto object-cover rounded-lg new-preview" style="aspect-ratio: 3/2;">
+            <img src="${imgSrc}" class="w-full h-auto object-cover rounded-lg" style="aspect-ratio: 3/2;">
             <button type="button" class="remove-image-preview-btn absolute top-1 right-1 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center font-bold">&times;</button>
         </div>
     `).join('');
@@ -3255,6 +3520,7 @@ function showProductModal(product = null) {
     modal.classList.remove('hidden');
     document.getElementById('product-form').addEventListener('submit', handleProductFormSubmit);
 }
+
 
 function showCategoryModal() {
     const modal = document.getElementById('category-modal');
@@ -3402,7 +3668,7 @@ async function handleAddCategory() {
         state.categories.push(newCategory);
         state.categories.sort((a, b) => a === 'All' ? -1 : b === 'All' ? 1 : a.localeCompare(b));
         await saveData();
-        showCategoryModal(); // Re-render the modal
+        showCategoryModal();
         input.value = '';
     }
 }
@@ -3410,15 +3676,14 @@ async function handleAddCategory() {
 async function handleDeleteCategory(categoryToDelete) {
     if (confirm(translations[state.lang].categoryDeleteConfirm)) {
         state.categories = state.categories.filter(c => c !== categoryToDelete);
-        // Uncategorize products
         state.products.forEach(p => {
             if (p.category === categoryToDelete) {
                 p.category = '';
             }
         });
         await saveData();
-        showCategoryModal(); // Re-render the modal
-        render(); // Re-render main UI
+        showCategoryModal();
+        render();
     }
 }
 
@@ -3429,6 +3694,15 @@ async function init() {
         state.currentUser = user;
         loadAndRenderApp();
     });
+
+    const employeeForm = document.getElementById('employee-form');
+    if (employeeForm) {
+        employeeForm.addEventListener('submit', handleEmployeeFormSubmit);
+    }
+    const cancelEmployeeBtn = document.getElementById('cancel-employee-modal-btn');
+    if (cancelEmployeeBtn) {
+        cancelEmployeeBtn.addEventListener('click', closeEmployeeModal);
+    }
 }
 
 function injectAnimationsCSS() {
@@ -3475,8 +3749,7 @@ function injectAnimationsCSS() {
 }
 
 function setupNavIcons() {
-    // The previous logic for adding/removing 'hidden' class on mouseenter/leave
-    // has been replaced by a pure CSS solution in injectAnimationsCSS() for better performance.
+    // This logic is now handled by CSS animations
 }
 
 
@@ -3490,6 +3763,7 @@ async function loadAndRenderApp() {
         state.customers = data.customers || [];
         state.bookings = data.bookings || [];
         state.salaries = data.salaries || {};
+        state.salariesPaidStatus = data.salariesPaidStatus || {};
     } else {
         console.error("Failed to load data:", data?.error);
         showNotification("CRITICAL: Failed to load database.", 'error');

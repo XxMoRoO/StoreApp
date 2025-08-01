@@ -149,7 +149,6 @@
             color: white;
         }
 
-        /* حاوية الأيقونة للسماح بالأنيميشن */
         .icon-wrapper {
             width: 1.7rem;
             height: 1.7rem;
@@ -370,6 +369,18 @@
             border-radius: 0.375rem;
         }
 
+        .paid-salary-row {
+            background-color: #d4edda !important;
+            color: #155724 !important;
+        }
+
+        .paid-salary-row input {
+            background-color: #c3e6cb !important;
+            color: #155724 !important;
+            border-color: #155724 !important;
+        }
+
+
         @keyframes vibrate {
             0% {
                 transform: translate(0);
@@ -418,32 +429,21 @@
                 <span class="nav-text-label" data-lang-key="navHome">Home</span>
             </button>
 
-            <!-- ======================================================== -->
-            <!-- أيقونة المخزن الجديدة بشكل صندوق مع غطاء متحرك -->
-            <!-- ======================================================== -->
             <button id="nav-inventory" class="nav-link admin-only" data-page="inventory-page" title="Inventory">
                 <div class="icon-wrapper">
-                    <!-- الحالة 1: الصندوق مغلق (يظهر افتراضياً) -->
                     <svg class="icon-state icon-closed" fill="currentColor" viewBox="0 0 24 24"
                         xmlns="http://www.w3.org/2000/svg">
                         <path
                             d="M2,8.5L12,13.5L22,8.5L12,3.5L2,8.5Z M12,14.5L2,9.5V15.5L12,20.5L22,15.5V9.5L12,14.5Z" />
                     </svg>
-                    <!-- الحالة 2: الصندوق مفتوح (يظهر عند مرور الماوس) -->
                     <svg class="icon-state icon-open" fill="currentColor" viewBox="0 0 24 24"
                         xmlns="http://www.w3.org/2000/svg">
-                        <!-- الغطاء المفتوح: تم رفعه وتدويره قليلاً -->
                         <path d="M2,8.5L12,3.5L22,8.5L12,13.5L2,8.5Z" transform="translate(0, -2) rotate(-15 12 8.5)" />
-                        <!-- قاعدة الصندوق -->
                         <path d="M12,14.5L2,9.5V15.5L12,20.5L22,15.5V9.5L12,14.5Z" />
                     </svg>
                 </div>
                 <span class="nav-text-label" data-lang-key="navInventory">Inventory</span>
             </button>
-            <!-- ======================================================== -->
-            <!-- نهاية أيقونة المخزن الجديدة -->
-            <!-- ======================================================== -->
-
 
             <button id="nav-selling" class="nav-link" data-page="selling-page" title="Selling">
                 <div class="nav-selling-wrapper icon-wrapper">
@@ -456,18 +456,13 @@
                 <span class="nav-text-label" data-lang-key="navSelling">Selling</span>
             </button>
 
-            <!-- ======================================================== -->
-            <!-- أيقونة الحجز الجديدة (تم تحديثها لتتوافق مع الأنيميشن) -->
-            <!-- ======================================================== -->
             <button id="nav-booking" class="nav-link" data-page="booking-page" title="Booking">
                 <div class="icon-wrapper">
-                    <!-- الحالة 1: أيقونة التقويم العادية -->
                     <svg class="icon-state icon-closed" fill="currentColor" viewBox="0 0 24 24"
                         xmlns="http://www.w3.org/2000/svg">
                         <path
                             d="M19,4H18V2H16V4H8V2H6V4H5A2,2 0 0,0 3,6V20A2,2 0 0,0 5,22H19A2,2 0 0,0 21,20V6A2,2 0 0,0 19,4M19,20H5V10H19V20M19,8H5V6H19V8Z" />
                     </svg>
-                    <!-- الحالة 2: أيقونة التقويم مع علامة حجز (تظهر عند المرور) -->
                     <svg class="icon-state icon-open" fill="currentColor" viewBox="0 0 24 24"
                         xmlns="http://www.w3.org/2000/svg">
                         <path
@@ -476,9 +471,6 @@
                 </div>
                 <span class="nav-text-label" data-lang-key="navBooking">Booking</span>
             </button>
-            <!-- ======================================================== -->
-            <!-- نهاية أيقونة الحجز الجديدة -->
-            <!-- ======================================================== -->
 
             <button id="nav-history" class="nav-link admin-only" data-page="history-page" title="History">
                 <div class="icon-wrapper">
@@ -702,8 +694,11 @@
             <div class="flex justify-between items-center mb-4">
                 <h1 class="text-3xl font-bold" data-lang-key="navSalaries">Salaries</h1>
                 <div class="flex items-center space-x-2">
+                    <input type="month" id="salaries-month-picker" class="p-2 rounded-lg">
                     <input type="text" id="salaries-search-input" placeholder="Search for user..."
                         class="p-2 rounded-lg">
+                    <button id="add-employee-btn" class="btn-primary py-2 px-4 rounded-lg"
+                        data-lang-key="addEmployee">Add Employee</button>
                     <button id="export-salaries-btn" class="btn-primary py-2 px-4 rounded-lg"
                         data-lang-key="exportExcel">Export to Excel</button>
                 </div>
@@ -711,14 +706,19 @@
             <div class="overflow-x-auto bg-white rounded-lg shadow">
                 <table id="salaries-table" class="w-full text-sm text-left">
                     <thead class="text-xs uppercase" style="background-color: var(--secondary-bg);">
+                        <!-- تعديل: تم تحديث رأس الجدول هنا -->
                         <tr>
+                            <th class="p-4" data-lang-key="colEmployeeId">Employee ID</th>
                             <th class="p-4" data-lang-key="colUserName">User Name</th>
+                            <th class="p-4" data-lang-key="colCustomerPhone">Phone</th>
                             <th class="p-4" data-lang-key="colFixedSalary">Fixed Salary</th>
                             <th class="p-4" data-lang-key="colCommissionPerPiece">Commission / Piece</th>
                             <th class="p-4" data-lang-key="colBonus">Bonus</th>
                             <th class="p-4" data-lang-key="colPiecesSold">Pieces Sold</th>
                             <th class="p-4" data-lang-key="colTotalCommission">Total Commission</th>
                             <th class="p-4" data-lang-key="colTotalSalary">Total Salary</th>
+                            <th class="p-4">Paid Status</th>
+                            <th class="p-4" data-lang-key="colActions">Actions</th>
                         </tr>
                     </thead>
                     <tbody></tbody>
@@ -731,8 +731,11 @@
             <h1 class="text-3xl font-bold mb-4" data-lang-key="customersTitle">Customers</h1>
             <div class="bg-white p-4 rounded-lg shadow mb-4 flex justify-between items-center">
                 <input type="text" id="customer-search" placeholder="Search by name or phone..." class="p-2 rounded-lg">
-                <button id="export-customers-btn" class="btn-primary py-2 px-4 rounded-lg"
-                    data-lang-key="exportExcel">Export to Excel</button>
+                <div>
+                    <button id="add-customer-btn" class="btn-primary py-2 px-4 rounded-lg mr-2">Add Customer</button>
+                    <button id="export-customers-btn" class="btn-secondary py-2 px-4 rounded-lg"
+                        data-lang-key="exportExcel">Export to Excel</button>
+                </div>
             </div>
             <div class="overflow-x-auto bg-white rounded-lg shadow">
                 <table id="customers-table" class="w-full text-sm text-left">
@@ -744,6 +747,7 @@
                             <th class="p-4" data-lang-key="colCustomerCity">City</th>
                             <th class="p-4" data-lang-key="colTotalItems">Items Bought</th>
                             <th class="p-4" data-lang-key="colLastPurchase">Last Purchase</th>
+                            <th class="p-4" data-lang-key="colActions">Actions</th>
                         </tr>
                     </thead>
                     <tbody></tbody>
@@ -809,6 +813,71 @@
         </div>
     </div>
     <div id="booking-edit-modal" class="modal fixed inset-0 z-50 flex items-center justify-center hidden"></div>
+
+    <!-- Add/Edit Employee Modal -->
+    <!-- تعديل: تم تحديث النافذة المنبثقة للموظفين -->
+    <div id="employee-modal" class="modal fixed inset-0 z-50 flex items-center justify-center hidden">
+        <div class="modal-content w-full max-w-md p-6 rounded-lg shadow-lg">
+            <h2 id="employee-modal-title" class="text-2xl font-bold mb-4" data-lang-key="addEmployee">Add New Employee
+            </h2>
+            <form id="employee-form" class="space-y-4">
+                <input type="hidden" id="employee-id-input">
+                <div>
+                    <label for="employee-name-input" class="block mb-1" data-lang-key="employeeName">Employee
+                        Name</label>
+                    <input type="text" id="employee-name-input" class="w-full p-2 rounded-lg" required>
+                </div>
+                <div>
+                    <label for="employee-id-input-modal" class="block mb-1" data-lang-key="employeeId">Employee
+                        ID</label>
+                    <input type="text" id="employee-id-input-modal" class="w-full p-2 rounded-lg" required>
+                </div>
+                <div>
+                    <label for="employee-phone-input" class="block mb-1" data-lang-key="employeePhone">Phone
+                        Number</label>
+                    <input type="tel" id="employee-phone-input" class="w-full p-2 rounded-lg">
+                </div>
+                <div class="flex justify-end space-x-4 mt-4">
+                    <button type="button" id="cancel-employee-modal-btn" class="btn-secondary py-2 px-4 rounded-lg"
+                        data-lang-key="btnCancel">Cancel</button>
+                    <button type="submit" class="btn-primary py-2 px-4 rounded-lg" data-lang-key="btnSave">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- Add/Edit Customer Modal -->
+    <div id="customer-modal" class="modal fixed inset-0 z-50 flex items-center justify-center hidden">
+        <div class="modal-content w-full max-w-md p-6 rounded-lg shadow-lg">
+            <h2 id="customer-modal-title" class="text-2xl font-bold mb-4">Add New Customer</h2>
+            <form id="customer-form" class="space-y-4">
+                <input type="hidden" id="customer-id-input">
+                <div>
+                    <label for="customer-name-input-modal" class="block mb-1">Name</label>
+                    <input type="text" id="customer-name-input-modal" class="w-full p-2 rounded-lg" required>
+                </div>
+                <div>
+                    <label for="customer-phone-input-modal" class="block mb-1">Phone</label>
+                    <input type="tel" id="customer-phone-input-modal" class="w-full p-2 rounded-lg" required>
+                </div>
+                <div>
+                    <label for="customer-address-input-modal" class="block mb-1">Address</label>
+                    <input type="text" id="customer-address-input-modal" class="w-full p-2 rounded-lg">
+                </div>
+                <div>
+                    <label for="customer-city-input-modal" class="block mb-1">City</label>
+                    <input type="text" id="customer-city-input-modal" class="w-full p-2 rounded-lg">
+                </div>
+                <div class="flex justify-end space-x-4 pt-4">
+                    <button type="button" id="cancel-customer-modal-btn"
+                        class="btn-secondary py-2 px-4 rounded-lg">Cancel</button>
+                    <button type="submit" class="btn-primary py-2 px-4 rounded-lg">Save Customer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
 
     <script src="renderer.js" type="module"></script>
 </body>

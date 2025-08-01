@@ -112,18 +112,23 @@ function getDatabase() {
         const fileData = fs.readFileSync(dbPath, 'utf-8');
         try {
             const db = JSON.parse(fileData);
-            // Ensure salaries structure includes bonus if it's an old database
-            if (!db.salaries) {
-                db.salaries = {};
-            }
-            // Initialize bonus for existing users if not present
+            // التأكد من وجود الحقول الجديدة للموظفين في قواعد البيانات القديمة
             db.users.forEach(user => {
+                if (user.employeeId === undefined) {
+                    user.employeeId = ''; // إضافة رقم وظيفي فارغ
+                }
+                if (user.phone === undefined) {
+                    user.phone = ''; // إضافة رقم هاتف فارغ
+                }
                 if (!db.salaries[user.username]) {
-                    db.salaries[user.username] = { fixed: 0, commission: 0, bonus: 0 }; // Initialize bonus
+                    db.salaries[user.username] = { fixed: 0, commission: 0, bonus: 0 };
                 } else if (db.salaries[user.username].bonus === undefined) {
-                    db.salaries[user.username].bonus = 0; // Add bonus if missing
+                    db.salaries[user.username].bonus = 0;
                 }
             });
+            if (!db.salariesPaidStatus) {
+                db.salariesPaidStatus = {};
+            }
             return db;
         } catch (e) {
             console.error("Local DB is corrupt, creating a new one.", e);
@@ -136,17 +141,19 @@ function getDatabase() {
         config: { adminPassword: 'admin123', lastShiftReportTime: null },
         products: [],
         sales: [],
-        users: [{ username: "omar", password: "omar123" }],
+        users: [{ username: "omar", password: "omar123", employeeId: "EMP001", phone: "01000000000" }], // بيانات افتراضية
         categories: [],
         customers: [],
         bookings: [],
         salaries: {
-            "omar": { fixed: 0, commission: 0, bonus: 0 } // Initialize bonus for default user
-        }
+            "omar": { fixed: 0, commission: 0, bonus: 0 }
+        },
+        salariesPaidStatus: {}
     };
     fs.writeFileSync(dbPath, JSON.stringify(initialData, null, 2), 'utf-8');
     return initialData;
 }
+
 
 // دالة لحفظ البيانات بطريقة آمنة لمنع تلف الملفات
 function safeWrite(data) {
@@ -166,7 +173,6 @@ function safeWrite(data) {
 ipcMain.on('login', (event, credentials) => {
     const { username, password } = credentials;
     const db = getDatabase();
-    // Make username comparison case-insensitive
     const user = db.users.find(u => u.username.toLowerCase() === username.toLowerCase() && u.password === password);
     if (user) {
         loggedInUser = user;
@@ -203,7 +209,8 @@ ipcMain.handle('save-data', (event, data) => {
     db.categories = data.categories ?? db.categories;
     db.customers = data.customers ?? db.customers;
     db.bookings = data.bookings ?? db.bookings;
-    db.salaries = data.salaries ?? db.salaries; // NEW: Save salaries
+    db.salaries = data.salaries ?? db.salaries;
+    db.salariesPaidStatus = data.salariesPaidStatus ?? db.salariesPaidStatus;
 
     return safeWrite(db);
 });
@@ -223,11 +230,10 @@ ipcMain.handle('load-receipt-template', async () => {
     } catch (error) { return { error: error.message }; }
 });
 
-// NEW: Handler for loading the booking receipt template
 ipcMain.handle('load-booking-template', async () => {
     try {
         const appPath = app.getAppPath();
-        const templatePath = path.join(appPath, 'booking-receipt.html'); // Use the new template
+        const templatePath = path.join(appPath, 'booking-receipt.html');
         const logoPath = path.join(appPath, 'build', 'logo.png');
         if (!fs.existsSync(templatePath)) throw new Error(`Booking template not found at ${templatePath}`);
         if (!fs.existsSync(logoPath)) throw new Error(`Logo not found at ${logoPath}`);
@@ -241,20 +247,9 @@ ipcMain.handle('load-booking-template', async () => {
     }
 });
 
-// NEW: IPC handler for exporting returns to PDF
 ipcMain.handle('export-returns-to-pdf', async (event, returnsData) => {
-    try {
-        // This is a placeholder. In a real Electron app, you'd generate the PDF here
-        // using a library like 'pdfkit' or by rendering HTML to PDF.
-        // For now, we'll just return success.
-        console.log("Generating Returns PDF with data:", returnsData);
-        // Example: You might save to a temp file and then let renderer open it
-        // fs.writeFileSync(path.join(app.getPath('temp'), 'returns_report.pdf'), 'PDF Content', 'utf-8');
-        return { success: true, message: "Returns PDF generated successfully (placeholder)." };
-    } catch (error) {
-        console.error("Error generating returns PDF:", error);
-        return { success: false, error: error.message };
-    }
+    console.log("Generating Returns PDF with data:", returnsData);
+    return { success: true, message: "Returns PDF generated successfully (placeholder)." };
 });
 
 
@@ -277,54 +272,75 @@ ipcMain.handle('change-admin-password', (event, data) => {
     return safeWrite(db);
 });
 
-ipcMain.handle('add-user', (event, credentials) => {
+// تعديل: إضافة موظف بدون كلمة مرور المدير
+ipcMain.handle('add-employee', (event, employeeData) => {
+    const { username, employeeId, phone } = employeeData;
     const db = getDatabase();
-    if (credentials.adminPassword !== db.config.adminPassword) {
-        return { success: false, message: 'Incorrect Admin Password.' };
-    }
-    // Check for username existence case-insensitively
-    if (db.users.some(u => u.username.toLowerCase() === credentials.username.toLowerCase())) {
+
+    if (db.users.some(u => u.username.toLowerCase() === username.toLowerCase())) {
         return { success: false, message: 'Username already exists.' };
     }
-    // Allow adding user without a password if isNoLoginUser is true
-    const password = credentials.password || (credentials.isNoLoginUser ? '' : 'default_password_if_empty'); // Default password if not provided and not no-login user
-    db.users.push({ username: credentials.username, password: password });
-    // Initialize salary entry for the new user
-    if (!db.salaries[credentials.username]) {
-        db.salaries[credentials.username] = { fixed: 0, commission: 0, bonus: 0 };
+    if (db.users.some(u => u.employeeId && u.employeeId.toLowerCase() === employeeId.toLowerCase())) {
+        return { success: false, message: 'Employee ID already exists.' };
+    }
+
+    db.users.push({
+        username: username,
+        password: '', // الموظف ليس له كلمة مرور لتسجيل الدخول
+        employeeId: employeeId,
+        phone: phone
+    });
+
+    if (!db.salaries[username]) {
+        db.salaries[username] = { fixed: 0, commission: 0, bonus: 0 };
     }
     return safeWrite(db);
 });
 
-ipcMain.handle('modify-user', (event, data) => {
-    const { usernameToModify, newPassword, adminPassword } = data;
+// تعديل: تعديل بيانات الموظف بدون كلمة مرور المدير
+ipcMain.handle('modify-employee', (event, data) => {
+    const { originalUsername, newUsername, newEmployeeId, newPhone } = data;
     const db = getDatabase();
-    if (adminPassword !== db.config.adminPassword) {
-        return { success: false, message: 'Incorrect admin password.' };
-    }
-    const userIndex = db.users.findIndex(u => u.username === usernameToModify);
+
+    const userIndex = db.users.findIndex(u => u.username === originalUsername);
     if (userIndex === -1) return { success: false, message: 'User not found.' };
-    db.users[userIndex].password = newPassword;
+
+    if (newUsername !== originalUsername && db.users.some(u => u.username.toLowerCase() === newUsername.toLowerCase())) {
+        return { success: false, message: 'New username already exists.' };
+    }
+    if (newEmployeeId !== db.users[userIndex].employeeId && db.users.some(u => u.employeeId && u.employeeId.toLowerCase() === newEmployeeId.toLowerCase())) {
+        return { success: false, message: 'New Employee ID already exists.' };
+    }
+
+    const user = db.users[userIndex];
+    user.username = newUsername;
+    user.employeeId = newEmployeeId;
+    user.phone = newPhone;
+
+    if (originalUsername !== newUsername) {
+        db.salaries[newUsername] = db.salaries[originalUsername];
+        delete db.salaries[originalUsername];
+    }
+
     return safeWrite(db);
 });
 
-ipcMain.handle('delete-user', (event, data) => {
-    const { usernameToDelete, adminPassword } = data;
+// تعديل: حذف الموظف بدون كلمة مرور المدير
+ipcMain.handle('delete-employee', (event, data) => {
+    const { usernameToDelete } = data;
     const db = getDatabase();
-    if (adminPassword !== db.config.adminPassword) {
-        return { success: false, message: 'Incorrect admin password.' };
-    }
+
     if (db.users.length <= 1) return { success: false, message: 'Cannot delete the last user.' };
 
     const initialUserCount = db.users.length;
     db.users = db.users.filter(u => u.username !== usernameToDelete);
-    // Also remove salary entry for the deleted user
     delete db.salaries[usernameToDelete];
 
     if (db.users.length === initialUserCount) return { success: false, message: 'User not found.' };
 
     return safeWrite(db);
 });
+
 
 ipcMain.handle('get-last-shift-time', () => {
     const db = getDatabase();
